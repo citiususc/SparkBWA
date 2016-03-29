@@ -1,0 +1,35 @@
+CC = gcc
+JAVAC = javac
+JAR = jar
+RMR = rm -Rf
+RM = rm -f
+
+MAKE = make
+LOCATION = `pwd`
+SRC_DIR = ./src
+BUILD_DIR = build
+
+# Hadoop variables ########
+LIBS_DIR = ./libs
+
+# Spark variables
+SPARK_URL = http://ftp.cixug.es/apache/spark/spark-1.6.1/spark-1.6.1-bin-hadoop2.6.tgz
+SPARK_PACKAGE = spark-1.6.1-bin-hadoop2.6.tgz
+
+# JAVA variables ####### 
+ifndef JAVA_HOME 
+JAVA_HOME = /usr/lib/jvm/java
+JAVA_HOME_INCLUDES = -I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/linux
+else
+JAVA_HOME_INCLUDES = -I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/linux
+endif
+
+JAR_FILES = $(LIBS_DIR)/commons-cli-1.2.jar:$(LIBS_DIR)/spark-assembly-1.6.1-hadoop2.6.0.jar
+
+# Bwa variables ########
+BWA_DIR = ./bwa
+BWA = bwa-0.7.12
+SPARKBWA_FLAGS = -c -g -Wall -Wno-unused-function -O2 -fPIC -DHAVE_PTHREAD -DUSE_MALLOC_WRAPPERS $(JAVA_HOME_INCLUDES)
+LIBBWA_FLAGS = -shared -o
+LIBBWA_LIBS = -lrt 
+
