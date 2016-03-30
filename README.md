@@ -14,7 +14,7 @@ All of them work with paired-end reads.
 In this GitHub repository you can find the following directories:
 
 * bwa - This folder contains the BWA software package required to build **SparkBWA**. Currently it includes versions 0.5.10-mt and 0.7.12, but **SparkBWA** is able to work with old or later versions of BWA.
-* libs - It contains the Spark libraries needed to build **SparkBWA**. By default, the Spark libraries are downloaded at compilation time.
+* libs - It contains the Spark libraries needed to build **SparkBWA**. By default, libraries are downloaded at compilation time.
 * src - **SparkBWA** source code.
 
 # Getting started #
@@ -41,8 +41,8 @@ The default way to build **SparkBWA** is:
 		
 This will create the *build* folder, which will contain two main files:
 
-* **SparkBWA.jar** - Jar file to launch with Spark.
-* **bwa.zip** - File with the BWA library needed to execute with Spark.
+* **SparkBWA.jar** - jar file to launch with Spark.
+* **bwa.zip** - File containing the BWA library needed to execute with Spark.
 
 ## Configuring Spark
 Spark only need to be stored in the Hadoop cluster master node. It can be downloaded as a binary or can be built from source. Either way, some parameters need to be adjusted to run **SparkBWA**. Assuming that Spark is stored at *spark_dir*, we need to modify the following file:
@@ -53,10 +53,10 @@ The next two lines must be included in the file:
 	spark.executor.extraJavaOptions		-Djava.library.path=./bwa.zip
 	spark.yarn.executor.memoryOverhead	8704
 	
-In this way, Spark executors are able to find the BWA library (first line). The second line sets the amount of off-heap memory (in megabytes) to be allocated per YARN container. This memory will be available to execute BWA outside the Java heap.
+In this way, Spark executors are able to find the BWA library (first line). The second line sets the amount of off-heap memory (in megabytes) to be allocated per YARN container. 
 
 ## Running SparkBWA ##
-**SparkBWA** requires a working Hadoop cluster. Users should take into account that at least 10 GB of free memory per map are required (each map loads into memory the bwa index - refrence genome). Note that **SparkBWA** uses disk space in the */tmp* directory.
+**SparkBWA** requires a working Hadoop cluster. Users should take into account that at least 10 GB of memory per map are required (each map loads into memory the bwa index - refrence genome). Note that **SparkBWA** uses disk space in the */tmp* directory.
 
 Here it is an example of how to execute **SparkBWA** using the BWA-MEM algorithm with paired-end reads. The example assumes that our index is stored in all the cluster nodes at */Data/HumanBase/* . The index can be obtained from BWA using "bwa index".
 
@@ -82,7 +82,7 @@ Finally, we can execute **SparkBWA** on the cluster. Again, we assume that Spark
 Options:
 * **-algorithm mem** - Sequence alignment algorithm (in this case, *BWA-MEM*).
 * **-reads paired** - Use sigle-end or paired-end reads.
-* **-index** - the index prefix is specified. The index must be available in all the cluster nodes at the same location.
+* **-index** - Index prefix is specified. The index must be available in all the cluster nodes at the same location.
 * The last three arguments are the input and output HDFS files.
 
 If you want to check all the available options, execute the command:
@@ -93,7 +93,7 @@ After the execution, in order to move the output to the local filesystem use:
 
 	hdfs dfs -copyToLocal Output_ERR000589/* ./
 	
-In case of not using a reducer, the output will be splited into several pieces (files). If we want to put it together we can use one of our Python utils or use "samtools merge":
+In case of not using a reducer, the output will be split into several pieces (files). If we want to put it together we can use one of our Python utils or use "samtools merge":
 
 	hdfs dfs -copyToLocal Output_ERR000589/* ./
 	python src/utils/FullSam.py ./ ./OutputFile.sam
