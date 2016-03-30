@@ -1,14 +1,14 @@
 # SparkBWA
-Speeding Up the Alignment of High-Throughput DNA Sequencing Data
+Speeding Up the Alignment of High-Throughput DNA Sequencing Data using Apache Spark
 
 # What's SparkBWA about? #
 
-**SparkBWA** is a tool to run the Burrows-Wheeler Aligner--[BWA][1] on a [Spark][4] cluster running [Hadoop][2]. The current version of SparkBWA (v0.1, march 2016) supports the following BWA algorithms:
+**SparkBWA** is a tool that integrates the Burrows-Wheeler Aligner--[BWA][1] on a [Apache Spark][4] framework running on the top of [Hadoop][2]. The current version of SparkBWA (v0.1, march 2016) supports the following BWA algorithms:
 
 * **BWA-MEM**
 * **BWA-ALN**
 
-All of them work with paired reads.
+All of them work with paired-end reads.
 
 # Structure #
 In this GitHub repository you can find the following directories:
@@ -45,22 +45,22 @@ This will create the *build* folder, which will contain two main files:
 * **bwa.zip** - File with the BWA library needed to execute with Spark.
 
 ## Configuring Spark
-Spark only need to be stored in the Hadoop cluster master node. It can be downloaded as a binary or can be built from source. Either way, some parameters need to be adjusted to run **SparkBWA**. For that, and assuming that Spark is stored at *spark_dir*, we need to modify the following file:
-* **spark_dir/conf/spark-defaults.conf**. If it does not exists, copy it from *spark-defaults.conf.template*, in the same directory.
+Spark only need to be stored in the Hadoop cluster master node. It can be downloaded as a binary or can be built from source. Either way, some parameters need to be adjusted to run **SparkBWA**. Assuming that Spark is stored at *spark_dir*, we need to modify the following file:
+* **spark_dir/conf/spark-defaults.conf**. If it does not exist, copy it from *spark-defaults.conf.template*, in the same directory.
 
-To this file, two lines must be added:
+The next two lines must be included in the file:
 	
 	spark.executor.extraJavaOptions		-Djava.library.path=./bwa.zip
 	spark.yarn.executor.memoryOverhead	8704
 	
-The first one os to indicate the Spark executors where to look for the bwa library. The second, to indicate the executors that 8704 megabytes of the YARN container are a overhead. This allows to have this quantity of memory available to execute BWA outside the Java heap.
+In this way, Spark executors are able to find the BWA library (first line). The second line sets the amount of off-heap memory (in megabytes) to be allocated per YARN container. This memory will be available to execute BWA outside the Java heap.
 
 ## Running SparkBWA ##
-**SparkBWA** requires a working Hadoop cluster. Users should take into account that at least 10 GB of free memory per map are required (each map loads into memory the bwa index). Note that **SparkBWA** uses disk space in the */tmp* directory.
+**SparkBWA** requires a working Hadoop cluster. Users should take into account that at least 10 GB of free memory per map are required (each map loads into memory the bwa index - refrence genome). Note that **SparkBWA** uses disk space in the */tmp* directory.
 
-Here it is an example of how to run **SparkBWA** with the BWA-MEM paired algorithm. This example assumes that our index is store in all the cluster nodes at */Data/HumanBase/* . The index can be obtained with BWA, using "bwa index".
+Here it is an example of how to execute **SparkBWA** using the BWA-MEM algorithm with paired-end reads. The example assumes that our index is stored in all the cluster nodes at */Data/HumanBase/* . The index can be obtained from BWA using "bwa index".
 
-First, we get the input Fastq reads from the [1000 Genomes Project][3] ftp:
+First, we get the input FASTQ reads from the [1000 Genomes Project][3] ftp:
 
 	wget ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data/NA12750/sequence_read/ERR000589_1.filt.fastq.gz
 	wget ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data/NA12750/sequence_read/ERR000589_2.filt.fastq.gz
@@ -80,20 +80,20 @@ Finally, we can execute **SparkBWA** on the cluster. Again, we assume that Spark
 	spark_dir/bin/spark-submit --class SparkBWA --master yarn-client SparkBWA.jar --driver-memory 1500m --executor-memory 1500m --executor-cores 1 --archives bwa.zip --verbose --num-executors 32 -algorithm mem -reads paired -index /Data/HumanBase/hg38 -partitions 32 ERR000589_1.filt.fastq ERR000589_2.filt.fastq Output_ERR000589
 
 Options:
-* **-algorithm mem** - the algorithm to use, in this case, *mem*.
-* **-reads paired** - the algorithm uses paired reads.
+* **-algorithm mem** - Sequence alignment algorithm (in this case, *BWA-MEM*).
+* **-reads paired** - Use sigle-end or paired-end reads.
 * **-index** - the index prefix is specified. The index must be available in all the cluster nodes at the same location.
-* The last three arguments are the input and output in HDFS.
+* The last three arguments are the input and output HDFS files.
 
 If you want to check all the available options, execute the command:
 
 	spark_dir/bin/spark-submit --class SparkBWA SparkBWA.jar
 
-After the execution, to move the output to the local filesystem use: 
+After the execution, in order to move the output to the local filesystem use: 
 
 	hdfs dfs -copyToLocal Output_ERR000589/* ./
 	
-In case of not using a reducer, the output will be splited into several pieces. If we want to put it together we can use one of our Python utils or use "samtools merge":
+In case of not using a reducer, the output will be splited into several pieces (files). If we want to put it together we can use one of our Python utils or use "samtools merge":
 
 	hdfs dfs -copyToLocal Output_ERR000589/* ./
 	python src/utils/FullSam.py ./ ./OutputFile.sam
