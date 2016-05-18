@@ -10,6 +10,12 @@ Speeding Up the Alignment of High-Throughput DNA Sequencing Data using Apache Sp
 
 All of them work with paired-end reads.
 
+If you use **SparkBWA**, please cite this article:
+
+José M. Abuin, Juan C. Pichel, Tomás F. Pena and Jorge Amigo. ["SparkBWA: Speeding Up the Alignment of High-Throughput DNA Sequencing Data"][5]. PLoS ONE, Vol. 11, Number 5, pages 1-21, 2016.
+
+Also, a version for Hadoop is available [here](https://github.com/citiususc/BigBWA){:target="_blank"}.
+
 # Structure #
 In this GitHub repository you can find the following directories:
 
@@ -109,3 +115,4 @@ You need to set correctly your *JAVA_HOME* environment variable or you can set i
 [2]: https://hadoop.apache.org/
 [3]: http://www.1000genomes.org/
 [4]: http://spark.apache.org/
+[5]: http://dx.doi.org/10.1371/journal.pone.0155461
