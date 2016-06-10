@@ -1,20 +1,17 @@
-# SparkBWA
-Speeding Up the Alignment of High-Throughput DNA Sequencing Data using Apache Spark
-
 # What's SparkBWA about? #
 
 **SparkBWA** is a tool that integrates the Burrows-Wheeler Aligner--[BWA][1] on a [Apache Spark][4] framework running on the top of [Hadoop][2]. The current version of SparkBWA (v0.1, march 2016) supports the following BWA algorithms:
 
 * **BWA-MEM**
-* **BWA-ALN**
+* **BWA-backtrack**
 
 All of them work with paired-end reads.
 
 If you use **SparkBWA**, please cite this article:
 
-José M. Abuin, Juan C. Pichel, Tomás F. Pena and Jorge Amigo. ["SparkBWA: Speeding Up the Alignment of High-Throughput DNA Sequencing Data"][5]. PLoS ONE, Vol. 11, Number 5, pages 1-21, 2016.
+José M. Abuin, Juan C. Pichel, Tomás F. Pena and Jorge Amigo. ["SparkBWA: Speeding Up the Alignment of High-Throughput DNA Sequencing Data"][5]. PLoS ONE 11(5), pp. 1-21, 2016.
 
-Also, a version for Hadoop is available [here](https://github.com/citiususc/BigBWA).
+A version for Hadoop is available [here](https://github.com/citiususc/BigBWA).
 
 # Structure #
 In this GitHub repository you can find the following directories:
