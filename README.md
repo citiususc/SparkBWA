@@ -83,8 +83,8 @@ Finally, we can execute **SparkBWA** on the cluster. Again, we assume that Spark
 	spark_dir/bin/spark-submit --class SparkBWA --master yarn-client SparkBWA.jar --driver-memory 1500m --executor-memory 1500m --executor-cores 1 --archives bwa.zip --verbose --num-executors 32 -algorithm mem -reads paired -index /Data/HumanBase/hg38 -partitions 32 ERR000589_1.filt.fastq ERR000589_2.filt.fastq Output_ERR000589
 
 Options:
-* **-algorithm mem** - Sequence alignment algorithm (in this case, *BWA-MEM*).
-* **-reads paired** - Use sigle-end or paired-end reads.
+* **-algorithm mem** - Sequence alignment algorithm (mem - *BWA-MEM*, aln - *BWA-backtrack*).
+* **-reads paired** - Use single or paired-end reads.
 * **-index** - Index prefix is specified. The index must be available in all the cluster nodes at the same location.
 * The last three arguments are the input and output HDFS files.
 
