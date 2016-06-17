@@ -203,6 +203,11 @@ public class BwaRDD extends JavaRDD<Tuple2<String,String>> {
 				//this.tmpDir = context.hadoopConfiguration().get("hadoop.tmp.dir");
 			}
 
+			if(this.tmpDir.startsWith("file:")){
+			
+				this.tmpDir = this.tmpDir.replaceFirst("file:","");
+			}
+
 			LOG.info("JMAbuin:: "+this.appId+" - "+this.appName);
 
 		}
