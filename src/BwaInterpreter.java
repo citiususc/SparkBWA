@@ -23,7 +23,6 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -41,9 +40,7 @@ import org.apache.spark.api.java.function.FlatMapFunction;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.storage.StorageLevel;
 
-
 import scala.Tuple2;
-
 
 /**
  * BwaInterpreter class
@@ -132,15 +129,12 @@ public class BwaInterpreter {
 		//The Hadoop configuration is obtained
 		this.conf = this.ctx.hadoopConfiguration();
 
-
-
 		//The block size
 		this.blocksize = this.conf.getLong("dfs.blocksize", 134217728);
 
 		//Output folder creation and split size
 		try {
 			FileSystem fs = FileSystem.get(this.conf);
-
 
 			//Path variable
 			Path outputDir = new Path(options.getOutputPath());
@@ -156,7 +150,6 @@ public class BwaInterpreter {
 
 			//To get the input files sizes
 			ContentSummary cSummaryFile1 = fs.getContentSummary(new Path(options.getInputPath()));
-
 
 			long lengthFile1 = cSummaryFile1.getLength();
 			long lengthFile2 = 0;
@@ -176,10 +169,6 @@ public class BwaInterpreter {
 			e.printStackTrace();
 		}
 
-
-
-
-
 		//Some configuration options are set. However, the option to load the bwa library needs to be specified in the Spark
 		//configuration files, because these options does not work (neither of them)
 		this.sparkConf.set("spark.yarn.dist.archives","./bwa.zip");
@@ -190,7 +179,6 @@ public class BwaInterpreter {
 		this.sparkConf.set("spark.executor.extraJavaOptions", "-Djava.library.path=./bwa.zip/");
 		//sparkConf.set("spark.executorEnv.[LD_LIBRARY_PATH]","./bwa.zip/");
 
-
 		ContextCleaner cleaner = this.ctx.sc().cleaner().get();
 
 		//The two RDDs to store input reads from FASTQ files in HDFS
@@ -199,7 +187,6 @@ public class BwaInterpreter {
 
 		//RDD where paired reads are going to be stored under the same key
 		JavaRDD<Tuple2<String,String>> pairedDataRDD = null;
-
 
 		LOG.info("JMAbuin:: Starting sorting if desired");
 
@@ -220,7 +207,6 @@ public class BwaInterpreter {
 				//First, the join operation is performed. After that, a sortByKey. The resulting values are obtained
 				pairedDataRDD = datasetTmp1.join(datasetTmp2).sortByKey().values();//.persist(StorageLevel.MEMORY_ONLY());
 				LOG.info("JMAbuin:: Sorting in memory without partitioning");
-
 			}
 
 			//Sort in memory with partitioning
@@ -313,7 +299,6 @@ public class BwaInterpreter {
 		//Also, the BWA options are set
 		this.dataRDD.setOptions(options);
 		this.dataRDD.persist(StorageLevel.MEMORY_ONLY());
-
 	}
 
 
@@ -348,8 +333,6 @@ public class BwaInterpreter {
 
 
 		}
-
-
 	}
 
 	/**
@@ -374,14 +357,11 @@ public class BwaInterpreter {
 
 		LOG.info("JMAbuin:: Starting writing reads to HDFS");
 
-
 		try {
 			FileSystem fs = FileSystem.get(conf);
 
 
 			Path outputFilePath = new Path(this.inputTmpFileName);
-
-
 
 			//To write the paired reads
 			FSDataOutputStream outputFinalStream = fs.create(outputFilePath, true);
@@ -389,7 +369,6 @@ public class BwaInterpreter {
 			//To read paired reads from both files
 			BufferedReader brFastqFile1 = new BufferedReader(new InputStreamReader(fs.open(new Path(fileName1))));
 			BufferedReader brFastqFile2 = new BufferedReader(new InputStreamReader(fs.open(new Path(fileName2))));
-
 
 			String lineFastq1;
 			String lineFastq2;
@@ -405,9 +384,6 @@ public class BwaInterpreter {
 				//Next lines are readed
 				lineFastq1 = brFastqFile1.readLine();
 				lineFastq2 = brFastqFile2.readLine();
-
-
-
 			}
 
 			//Close the input and output files
@@ -415,18 +391,14 @@ public class BwaInterpreter {
 			brFastqFile2.close();
 			outputFinalStream.close();
 
-
 			//Now it is time to read the previous created file and create the RDD
-
 			ContentSummary cSummary = fs.getContentSummary(outputFilePath);
-
 
 			long length = cSummary.getLength();
 
 			this.totalInputLength = length;
 
 			fs.close();
-
 
 			//In case of the user does want partitioning
 			if(this.options.getPartitionNumber()!=0){
@@ -534,13 +506,10 @@ public class BwaInterpreter {
 				String value2 = record2[0]+"\n"+record2[1]+"\n"+record2[2]+"\n"+record2[3];
 
 				returnValue.add(new Tuple2<String,String>(value1,value2));
-
-
 			}
 
 			return returnValue;
 		}
-
 	}
 
 
@@ -561,6 +530,4 @@ public class BwaInterpreter {
 	public void setDataRDD(BwaRDD dataRDD) {
 		this.dataRDD = dataRDD;
 	}
-
-
 }
