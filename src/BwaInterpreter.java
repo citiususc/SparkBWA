@@ -225,106 +225,14 @@ public class BwaInterpreter {
 
 			//Sort in memory with partitioning
 			else if((options.getPartitionNumber()!=0) && (options.isSortFastqReads())){
-
-				//long initTimeJoin = System.nanoTime();
-
 				//The first step is perform the join between the two FASTQ files
 				JavaPairRDD<Long,Tuple2<String,String>> tmpRDD = datasetTmp1.join(datasetTmp2).persist(StorageLevel.MEMORY_ONLY());
-
-
-				/*
-				 * The following code was ment to make a distintion between coalesce and repartition. But, after some executions
-				 * it has been observed that the coalesce operation does not distribute the paired reads in splits of the same size.
-				 * So, because of that, the repartition operation is always performed
-				 */
-
-				//int numPartitions = tmpRDD.partitions().size();
-				/*
-				//Repartition or coalesce according to the number of partitions.
-				//Times here are not correct. In case of need they should be observed in Spark UI
-				if((numPartitions) <= options.getPartitionNumber()){ //Case of repartition
-
-
-					JavaPairRDD<Long,Tuple2<String,String>> tmpRDD2;
-					JavaPairRDD<Long,Tuple2<String,String>> tmpRDD3;
-
-
-					long endTimeJoin = System.nanoTime();
-
-					LOG.warn("Time spent in join: "+(endTimeJoin-initTimeJoin)/1e9/60.0);
-
-					initTimeJoin = System.nanoTime();
-					tmpRDD2 = tmpRDD.repartition(options.getPartitionNumber()).persist(StorageLevel.MEMORY_ONLY());
-					cleaner.doCleanupRDD(tmpRDD.id(), true);
-
-					endTimeJoin = System.nanoTime();
-
-					LOG.warn("Time spent in repartition: "+(endTimeJoin-initTimeJoin)/1e9/60.0);
-
-					initTimeJoin = System.nanoTime();
-					tmpRDD3 = tmpRDD2.sortByKey().persist(StorageLevel.MEMORY_ONLY());
-					cleaner.doCleanupRDD(tmpRDD2.id(), true);
-
-					endTimeJoin = System.nanoTime();
-
-					LOG.warn("Time spent in sortbykey: "+(endTimeJoin-initTimeJoin)/1e9/60.0);
-
-					pairedDataRDD = tmpRDD3.values().persist(StorageLevel.MEMORY_ONLY());
-
-					tmpRDD.unpersist();
-					tmpRDD2.unpersist();
-					tmpRDD3.unpersist();
-
-					cleaner.doCleanupRDD(tmpRDD3.id(), true);
-
-				}
-				else{ //Case of coalesce
-
-					JavaPairRDD<Long,Tuple2<String,String>> tmpRDD2;
-					JavaPairRDD<Long,Tuple2<String,String>> tmpRDD3;
-
-					long endTimeJoin = System.nanoTime();
-
-					LOG.warn("Time spent in join: "+(endTimeJoin-initTimeJoin)/1e9/60.0);
-
-					initTimeJoin = System.nanoTime();
-					//tmpRDD2 = tmpRDD.coalesce(options.getPartitionNumber(),false).persist(StorageLevel.MEMORY_ONLY());
-					tmpRDD2 = tmpRDD.repartition(options.getPartitionNumber()).persist(StorageLevel.MEMORY_ONLY());
-
-					cleaner.doCleanupRDD(tmpRDD.id(), true);
-
-					endTimeJoin = System.nanoTime();
-
-					LOG.warn("Time spent in coalesce: "+(endTimeJoin-initTimeJoin)/1e9/60.0);
-
-					initTimeJoin = System.nanoTime();
-					tmpRDD3 = tmpRDD2.sortByKey().persist(StorageLevel.MEMORY_ONLY());
-
-					cleaner.doCleanupRDD(tmpRDD2.id(), true);
-
-					endTimeJoin = System.nanoTime();
-
-					LOG.warn("Time spent in sortbykey: "+(endTimeJoin-initTimeJoin)/1e9/60.0);
-
-					pairedDataRDD = tmpRDD3.values().persist(StorageLevel.MEMORY_ONLY());
-
-					tmpRDD.unpersist();
-					tmpRDD2.unpersist();
-					tmpRDD3.unpersist();
-
-					cleaner.doCleanupRDD(tmpRDD3.id(), true);
-
-				}
-				*/
-
 
 				tmpRDD = tmpRDD.repartition(options.getPartitionNumber());
 				pairedDataRDD = tmpRDD.sortByKey().values().persist(StorageLevel.MEMORY_ONLY());
 				LOG.info("JMAbuin:: Repartition with sort");
 
 				tmpRDD.unpersist();
-
-
 			}
 
 			//No Sort with no partitioning
@@ -336,8 +244,7 @@ public class BwaInterpreter {
 			}
 
 			//No Sort with partitioning
-			else{// if((options.getPartitionNumber()!=0) && (!options.isSortFastqReads())){
-
+			else{
 				LOG.info("JMAbuin:: No sort with partitioning");
 
 				//Again, the fisrt step is perform the join operation
