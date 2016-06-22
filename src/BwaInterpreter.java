@@ -205,7 +205,7 @@ public class BwaInterpreter {
 			if((options.getPartitionNumber()==0) && (options.isSortFastqReads())){
 
 				//First, the join operation is performed. After that, a sortByKey. The resulting values are obtained
-				pairedDataRDD = datasetTmp1.join(datasetTmp2).sortByKey().values();//.persist(StorageLevel.MEMORY_ONLY());
+				pairedDataRDD = datasetTmp1.join(datasetTmp2).sortByKey().values();
 				LOG.info("JMAbuin:: Sorting in memory without partitioning");
 			}
 
@@ -224,7 +224,7 @@ public class BwaInterpreter {
 			//No Sort with no partitioning
 			else if((options.getPartitionNumber()==0) && (!options.isSortFastqReads())){
 				//In this case only the join has to be performed
-				pairedDataRDD = datasetTmp1.join(datasetTmp2).values();//.persist(StorageLevel.MEMORY_ONLY());
+				pairedDataRDD = datasetTmp1.join(datasetTmp2).values();
 				LOG.info("JMAbuin:: No sort and no partitioning");
 
 			}
@@ -246,7 +246,6 @@ public class BwaInterpreter {
 					LOG.info("JMAbuin:: Repartition with no sort");
 				}
 				else{
-					//pairedDataRDD = tmpRDD.coalesce(options.getPartitionNumber(), false).values().persist(StorageLevel.MEMORY_ONLY());
 					pairedDataRDD = tmpRDD.repartition(options.getPartitionNumber()).values().persist(StorageLevel.MEMORY_ONLY());
 					LOG.info("JMAbuin:: Repartition(Coalesce) with no sort");
 				}
@@ -415,7 +414,7 @@ public class BwaInterpreter {
 			}
 			else{
 				//Using the FastqInputFormatDouble class we get values from the HDFS file. After that, these values are stored in a RDD
-				return this.ctx.newAPIHadoopFile(this.inputTmpFileName, FastqInputFormatDouble.class, Long.class, String.class, this.conf).map(new BigFastq2RDDDouble());//.mapToPair(new BigFastq2RDDDouble());
+				return this.ctx.newAPIHadoopFile(this.inputTmpFileName, FastqInputFormatDouble.class, Long.class, String.class, this.conf).map(new BigFastq2RDDDouble());
 			}
 
 		} catch (IOException e) {
