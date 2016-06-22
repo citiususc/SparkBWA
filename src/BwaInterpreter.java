@@ -61,7 +61,7 @@ public class BwaInterpreter {
 
 	private long totalInputLength;			/**< To store the length of the input data */
 	private long blocksize;					/**< To store the block size in HDFS */
-	
+
 	private static final Log LOG = LogFactory.getLog(BwaInterpreter.class); /**< The Log */
 
 	private BwaOptions options;				/**< Options to launch BWA */
@@ -94,7 +94,7 @@ public class BwaInterpreter {
 		this.initInterpreter();
 	}
 
-	
+
 	/**
 	 * Procedure to init the BwaInterpreter configuration parameters
 	 * @author José M. Abuín
@@ -103,7 +103,7 @@ public class BwaInterpreter {
 
 		//If ctx is null, this procedure is being called from the Linux console with Spark
 		if(this.ctx == null){
-			
+
 			String sorting;
 
 			//Check for the options to perform the sort reads
@@ -125,18 +125,18 @@ public class BwaInterpreter {
 		}
 		//Otherwise, the procedure is being called from the Spark shell
 		else{
-			
+
 			this.sparkConf = this.ctx.getConf();
 
 		}
 		//The Hadoop configuration is obtained
 		this.conf = this.ctx.hadoopConfiguration();
 
-		
+
 
 		//The block size
 		this.blocksize = this.conf.getLong("dfs.blocksize", 134217728);
-		
+
 		//Output folder creation and split size
 		try {
 			FileSystem fs = FileSystem.get(this.conf);
@@ -144,7 +144,7 @@ public class BwaInterpreter {
 
 			//Path variable
 			Path outputDir = new Path(options.getOutputPath());
-			
+
 			//Directory creation
 			if(!fs.exists(outputDir)){
 				fs.mkdirs(outputDir);
@@ -159,22 +159,15 @@ public class BwaInterpreter {
 
 
 			long lengthFile1 = cSummaryFile1.getLength();
-			
 			long lengthFile2 = 0;
-			
+
 			if(!options.getInputPath2().isEmpty()){
 				ContentSummary cSummaryFile2 = fs.getContentSummary(new Path(options.getInputPath()));
-				
 				lengthFile2 = cSummaryFile2.getLength();
 			}
-			
-			
+
 			//Total size. Depends on paired or single reads
 			this.totalInputLength = lengthFile1 + lengthFile2;
-			
-			
-			
-			
 			fs.close();
 
 		} catch (IOException e) {
@@ -192,7 +185,7 @@ public class BwaInterpreter {
 		this.sparkConf.set("spark.yarn.dist.archives","./bwa.zip");
 		this.conf.set("mapreduce.map.env", "LD_LIBRARY_PATH=./bwa.zip/");
 		this.conf.set("mapreduce.reduce.env", "LD_LIBRARY_PATH=./bwa.zip/");
-		this.sparkConf.set("spark.driver.extraLibraryPath", "./bwa.zip/");		
+		this.sparkConf.set("spark.driver.extraLibraryPath", "./bwa.zip/");
 		this.sparkConf.set("spark.executor.extraLibraryPath", "./bwa.zip/");
 		this.sparkConf.set("spark.executor.extraJavaOptions", "-Djava.library.path=./bwa.zip/");
 		//sparkConf.set("spark.executorEnv.[LD_LIBRARY_PATH]","./bwa.zip/");
@@ -200,7 +193,7 @@ public class BwaInterpreter {
 
 		ContextCleaner cleaner = this.ctx.sc().cleaner().get();
 
-		//The two RDDs to store input reads from FASTQ files in HDFS		
+		//The two RDDs to store input reads from FASTQ files in HDFS
 		JavaPairRDD<Long,String> datasetTmp1 = null;
 		JavaPairRDD<Long,String> datasetTmp2 = null;
 
@@ -220,7 +213,7 @@ public class BwaInterpreter {
 			//Read the two FASTQ files from HDFS using the FastqInputFormat class
 			datasetTmp1 = ctx.newAPIHadoopFile(options.getInputPath(), FastqInputFormat.class, Long.class, String.class, this.conf).persist(StorageLevel.MEMORY_ONLY());
 			datasetTmp2 = ctx.newAPIHadoopFile(options.getInputPath2(), FastqInputFormat.class, Long.class, String.class,this.conf).persist(StorageLevel.MEMORY_ONLY());
-			
+
 			//Sort in memory with no partitioning
 			if((options.getPartitionNumber()==0) && (options.isSortFastqReads())){
 
@@ -230,112 +223,107 @@ public class BwaInterpreter {
 
 			}
 
-			//Sort in memory with partitioning			
+			//Sort in memory with partitioning
 			else if((options.getPartitionNumber()!=0) && (options.isSortFastqReads())){
-				
+
 				//long initTimeJoin = System.nanoTime();
-				
+
 				//The first step is perform the join between the two FASTQ files
 				JavaPairRDD<Long,Tuple2<String,String>> tmpRDD = datasetTmp1.join(datasetTmp2).persist(StorageLevel.MEMORY_ONLY());
-				
-				
+
+
 				/*
 				 * The following code was ment to make a distintion between coalesce and repartition. But, after some executions
 				 * it has been observed that the coalesce operation does not distribute the paired reads in splits of the same size.
 				 * So, because of that, the repartition operation is always performed
 				 */
-				
+
 				//int numPartitions = tmpRDD.partitions().size();
 				/*
 				//Repartition or coalesce according to the number of partitions.
 				//Times here are not correct. In case of need they should be observed in Spark UI
 				if((numPartitions) <= options.getPartitionNumber()){ //Case of repartition
-					
-					
+
+
 					JavaPairRDD<Long,Tuple2<String,String>> tmpRDD2;
 					JavaPairRDD<Long,Tuple2<String,String>> tmpRDD3;
-					
-					
+
+
 					long endTimeJoin = System.nanoTime();
-					
+
 					LOG.warn("Time spent in join: "+(endTimeJoin-initTimeJoin)/1e9/60.0);
-					
+
 					initTimeJoin = System.nanoTime();
 					tmpRDD2 = tmpRDD.repartition(options.getPartitionNumber()).persist(StorageLevel.MEMORY_ONLY());
 					cleaner.doCleanupRDD(tmpRDD.id(), true);
-					
+
 					endTimeJoin = System.nanoTime();
-					
+
 					LOG.warn("Time spent in repartition: "+(endTimeJoin-initTimeJoin)/1e9/60.0);
-					
+
 					initTimeJoin = System.nanoTime();
 					tmpRDD3 = tmpRDD2.sortByKey().persist(StorageLevel.MEMORY_ONLY());
 					cleaner.doCleanupRDD(tmpRDD2.id(), true);
-					
+
 					endTimeJoin = System.nanoTime();
-					
+
 					LOG.warn("Time spent in sortbykey: "+(endTimeJoin-initTimeJoin)/1e9/60.0);
-					
+
 					pairedDataRDD = tmpRDD3.values().persist(StorageLevel.MEMORY_ONLY());
-					
+
 					tmpRDD.unpersist();
 					tmpRDD2.unpersist();
 					tmpRDD3.unpersist();
-					
-					
-					
+
 					cleaner.doCleanupRDD(tmpRDD3.id(), true);
-					
+
 				}
 				else{ //Case of coalesce
 
 					JavaPairRDD<Long,Tuple2<String,String>> tmpRDD2;
 					JavaPairRDD<Long,Tuple2<String,String>> tmpRDD3;
-					
+
 					long endTimeJoin = System.nanoTime();
-					
+
 					LOG.warn("Time spent in join: "+(endTimeJoin-initTimeJoin)/1e9/60.0);
-					
+
 					initTimeJoin = System.nanoTime();
 					//tmpRDD2 = tmpRDD.coalesce(options.getPartitionNumber(),false).persist(StorageLevel.MEMORY_ONLY());
 					tmpRDD2 = tmpRDD.repartition(options.getPartitionNumber()).persist(StorageLevel.MEMORY_ONLY());
-					
+
 					cleaner.doCleanupRDD(tmpRDD.id(), true);
-					
+
 					endTimeJoin = System.nanoTime();
-					
+
 					LOG.warn("Time spent in coalesce: "+(endTimeJoin-initTimeJoin)/1e9/60.0);
-					
+
 					initTimeJoin = System.nanoTime();
 					tmpRDD3 = tmpRDD2.sortByKey().persist(StorageLevel.MEMORY_ONLY());
-					
+
 					cleaner.doCleanupRDD(tmpRDD2.id(), true);
-					
+
 					endTimeJoin = System.nanoTime();
-					
+
 					LOG.warn("Time spent in sortbykey: "+(endTimeJoin-initTimeJoin)/1e9/60.0);
-					
+
 					pairedDataRDD = tmpRDD3.values().persist(StorageLevel.MEMORY_ONLY());
-					
+
 					tmpRDD.unpersist();
 					tmpRDD2.unpersist();
 					tmpRDD3.unpersist();
-					
-					
-					
+
 					cleaner.doCleanupRDD(tmpRDD3.id(), true);
-					
+
 				}
 				*/
-				
-				
+
+
 				tmpRDD = tmpRDD.repartition(options.getPartitionNumber());
 				pairedDataRDD = tmpRDD.sortByKey().values().persist(StorageLevel.MEMORY_ONLY());
 				LOG.info("JMAbuin:: Repartition with sort");
-				
-				
+
 				tmpRDD.unpersist();
-				
+
 
 			}
 
@@ -349,14 +337,14 @@ public class BwaInterpreter {
 
 			//No Sort with partitioning
 			else{// if((options.getPartitionNumber()!=0) && (!options.isSortFastqReads())){
-				
+
 				LOG.info("JMAbuin:: No sort with partitioning");
 
 				//Again, the fisrt step is perform the join operation
 				JavaPairRDD<Long,Tuple2<String,String>> tmpRDD = datasetTmp1.join(datasetTmp2).persist(StorageLevel.MEMORY_ONLY());
-				
+
 				int numPartitions = tmpRDD.partitions().size();
-				
+
 				/*
 				 * As in previous cases, the coalesce operation is not suitable if we want to achieve the maximum speedup, so, repartition is used.
 				 */
@@ -369,10 +357,10 @@ public class BwaInterpreter {
 					pairedDataRDD = tmpRDD.repartition(options.getPartitionNumber()).values().persist(StorageLevel.MEMORY_ONLY());
 					LOG.info("JMAbuin:: Repartition(Coalesce) with no sort");
 				}
-				
+
 				tmpRDD.unpersist();
-				
-				
+
+
 			}
 
 			datasetTmp1.unpersist();
@@ -380,7 +368,7 @@ public class BwaInterpreter {
 
 			cleaner.doCleanupRDD(datasetTmp1.id(), true);
 			cleaner.doCleanupRDD(datasetTmp2.id(), true);
-			
+
 			long endTime = System.nanoTime();
 
 			LOG.info("JMAbuin:: End of sorting. Timing: "+endTime);
@@ -392,10 +380,10 @@ public class BwaInterpreter {
 		else{
 			long startTime;
 			long endTime;
-			
+
 			//The temp file name
 			this.inputTmpFileName = options.getInputPath().split("/")[options.getInputPath().split("/").length-1]+"-"+options.getInputPath2().split("/")[options.getInputPath2().split("/").length-1];
-			
+
 			startTime = System.nanoTime();
 
 			LOG.info("JMAbuin:: Sorting in HDFS. Start time: "+startTime);
@@ -407,17 +395,14 @@ public class BwaInterpreter {
 			endTime = System.nanoTime();
 			LOG.info("JMAbuin:: End of sorting. Timing: "+endTime);
 			LOG.info("JMAbuin:: Total time: "+(endTime-startTime)/1e9/60.0+" minutes");
-			
-
 		}
-
 
 		datasetTmp1 = null;
 		datasetTmp2 = null;
 
 		//After processing the input FASTQ reads, the BwaRDD is created
 		this.dataRDD = new BwaRDD(pairedDataRDD.rdd(),pairedDataRDD.classTag());
-		
+
 		//Also, the BWA options are set
 		this.dataRDD.setOptions(options);
 		this.dataRDD.persist(StorageLevel.MEMORY_ONLY());
@@ -432,7 +417,7 @@ public class BwaInterpreter {
 	public void RunBwa(){
 
 		LOG.info("JMAbuin:: Starting BWA");
-		
+
 		//The function to actually run BWA is inside the BwaRDD class.
 		this.dataRDD.MapBwa();
 
@@ -479,7 +464,7 @@ public class BwaInterpreter {
 	public JavaRDD<Tuple2<String,String>> SortInHDFS2(String fileName1, String fileName2){
 
 		Configuration conf = this.conf;
-		
+
 		LOG.info("JMAbuin:: Starting writing reads to HDFS");
 
 
@@ -507,18 +492,17 @@ public class BwaInterpreter {
 
 			//Loop to read two files. The two of them must have the same line numbers
 			while (lineFastq1 != null){
-				
 				//The lines are written interspersed
 				outputFinalStream.write((lineFastq1+"\n"+lineFastq2+"\n").getBytes());
-				
+
 				//Next lines are readed
 				lineFastq1 = brFastqFile1.readLine();
 				lineFastq2 = brFastqFile2.readLine();
 
-				
-				
+
+
 			}
-			
+
 			//Close the input and output files
 			brFastqFile1.close();
 			brFastqFile2.close();
@@ -545,10 +529,10 @@ public class BwaInterpreter {
 				this.conf.set("mapreduce.input.fileinputformat.split.minsize", String.valueOf((length)/this.options.getPartitionNumber()));
 
 				LOG.info("JMAbuin partitioning from HDFS:: "+String.valueOf((length)/this.options.getPartitionNumber()));
-				
+
 				//Using the FastqInputFormatDouble class we get values from the HDFS file. After that, these values are stored in a RDD
 				return this.ctx.newAPIHadoopFile(this.inputTmpFileName, FastqInputFormatDouble.class, Long.class, String.class, this.conf).mapPartitions(new BigFastq2RDDPartitionsDouble(),true);
-				
+
 			}
 			else{
 				//Using the FastqInputFormatDouble class we get values from the HDFS file. After that, these values are stored in a RDD
@@ -584,7 +568,7 @@ public class BwaInterpreter {
 		 * Line 6 - Line 3 from first read
 		 * Line 7 - Line 3 from second read
 		 */
-		
+
 		@Override
 		public Tuple2<String, String> call(Tuple2<Long, String> arg0) throws Exception {
 			String reads[] = arg0._2.split("\n");
@@ -601,7 +585,7 @@ public class BwaInterpreter {
 
 
 	}
-	
+
 	/**
 	 * Class used to create an RDD with the mapPartitions function from a file from HDFS
 	 * @author José M. Abuín
@@ -622,7 +606,7 @@ public class BwaInterpreter {
 		 * Line 6 - Line 3 from first read
 		 * Line 7 - Line 3 from second read
 		 */
-		
+
 		@Override
 		public Iterable<Tuple2<String, String>> call(Iterator<Tuple2<Long, String>> arg0) throws Exception {
 			Tuple2<Long, String> entry;
@@ -633,7 +617,7 @@ public class BwaInterpreter {
 				entry = arg0.next();
 
 				String reads[] = entry._2.split("\n");
-				
+
 
 				String record1[] = {reads[0],reads[2],reads[4],reads[6]};
 				String record2[] = {reads[1],reads[3],reads[5],reads[7]};
@@ -651,7 +635,7 @@ public class BwaInterpreter {
 		}
 
 	}
-	
+
 
 	/**
 	 * Function that returns the BwaRDD
