@@ -91,13 +91,70 @@ public class BwaInterpreter {
 		this.initInterpreter();
 	}
 
+	private void setTotalInputLength() {
+		try {
+			FileSystem fs = FileSystem.get(this.conf);
+
+			// To get the input files sizes
+			ContentSummary cSummaryFile1 = fs.getContentSummary(new Path(options.getInputPath()));
+
+			long lengthFile1 = cSummaryFile1.getLength();
+			long lengthFile2 = 0;
+
+			if(!options.getInputPath2().isEmpty()){
+				ContentSummary cSummaryFile2 = fs.getContentSummary(new Path(options.getInputPath()));
+				lengthFile2 = cSummaryFile2.getLength();
+			}
+
+			// Total size. Depends on paired or single reads
+			this.totalInputLength = lengthFile1 + lengthFile2;
+			fs.close();
+		} catch (IOException e) {
+			LOG.error(e.toString());
+			e.printStackTrace();
+		}
+	}
+
+	private void createOutputFolder() {
+		try {
+			FileSystem fs = FileSystem.get(this.conf);
+
+			// Path variable
+			Path outputDir = new Path(options.getOutputPath());
+
+			// Directory creation
+			if(!fs.exists(outputDir)){
+				fs.mkdirs(outputDir);
+			}
+			else{
+				fs.delete(outputDir, true);
+				fs.mkdirs(outputDir);
+			}
+
+			fs.close();
+		} catch (IOException e) {
+			LOG.error(e.toString());
+			e.printStackTrace();
+		}
+	}
+
+	private void setSparkSettings() {
+		// Some configuration options are set. However, the option to load the
+		// bwa library needs to be specified in the Spark configuration files,
+		// because these options does not work (neither of them)
+		this.sparkConf.set("spark.yarn.dist.archives","./bwa.zip");
+		this.conf.set("mapreduce.map.env", "LD_LIBRARY_PATH=./bwa.zip/");
+		this.conf.set("mapreduce.reduce.env", "LD_LIBRARY_PATH=./bwa.zip/");
+		this.sparkConf.set("spark.driver.extraLibraryPath", "./bwa.zip/");
+		this.sparkConf.set("spark.executor.extraLibraryPath", "./bwa.zip/");
+		this.sparkConf.set("spark.executor.extraJavaOptions", "-Djava.library.path=./bwa.zip/");
+	}
 
 	/**
 	 * Procedure to init the BwaInterpreter configuration parameters
 	 * @author José M. Abuín
 	 */
 	public void initInterpreter(){
-
 		//If ctx is null, this procedure is being called from the Linux console with Spark
 		if(this.ctx == null){
 
@@ -132,52 +189,10 @@ public class BwaInterpreter {
 		//The block size
 		this.blocksize = this.conf.getLong("dfs.blocksize", 134217728);
 
-		//Output folder creation and split size
-		try {
-			FileSystem fs = FileSystem.get(this.conf);
+		createOutputFolder();
+		setTotalInputLength();
 
-			//Path variable
-			Path outputDir = new Path(options.getOutputPath());
-
-			//Directory creation
-			if(!fs.exists(outputDir)){
-				fs.mkdirs(outputDir);
-			}
-			else{
-				fs.delete(outputDir, true);
-				fs.mkdirs(outputDir);
-			}
-
-			//To get the input files sizes
-			ContentSummary cSummaryFile1 = fs.getContentSummary(new Path(options.getInputPath()));
-
-			long lengthFile1 = cSummaryFile1.getLength();
-			long lengthFile2 = 0;
-
-			if(!options.getInputPath2().isEmpty()){
-				ContentSummary cSummaryFile2 = fs.getContentSummary(new Path(options.getInputPath()));
-				lengthFile2 = cSummaryFile2.getLength();
-			}
-
-			//Total size. Depends on paired or single reads
-			this.totalInputLength = lengthFile1 + lengthFile2;
-			fs.close();
-
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			LOG.error(e.toString());
-			e.printStackTrace();
-		}
-
-		//Some configuration options are set. However, the option to load the bwa library needs to be specified in the Spark
-		//configuration files, because these options does not work (neither of them)
-		this.sparkConf.set("spark.yarn.dist.archives","./bwa.zip");
-		this.conf.set("mapreduce.map.env", "LD_LIBRARY_PATH=./bwa.zip/");
-		this.conf.set("mapreduce.reduce.env", "LD_LIBRARY_PATH=./bwa.zip/");
-		this.sparkConf.set("spark.driver.extraLibraryPath", "./bwa.zip/");
-		this.sparkConf.set("spark.executor.extraLibraryPath", "./bwa.zip/");
-		this.sparkConf.set("spark.executor.extraJavaOptions", "-Djava.library.path=./bwa.zip/");
-		//sparkConf.set("spark.executorEnv.[LD_LIBRARY_PATH]","./bwa.zip/");
+		setSparkSettings();
 
 		ContextCleaner cleaner = this.ctx.sc().cleaner().get();
 
@@ -321,7 +336,6 @@ public class BwaInterpreter {
 				fs.delete(new Path(this.inputTmpFileName), true);
 
 				fs.close();
-
 			}
 
 
