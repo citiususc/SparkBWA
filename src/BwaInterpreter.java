@@ -348,13 +348,6 @@ public class BwaInterpreter {
 		}
 	}
 
-	/**
-	 * This function only calls RunBwa
-	 */
-	public void runAlignment(){
-
-		this.RunBwa();
-	}
 
 	/**
 	 * Used to perform the sort operation in HDFS
