@@ -56,17 +56,6 @@ public class Bwa implements Serializable {
 	
 	private String outputHdfsDir	= "";				/**< The HDFS directory where the output files are going to be stored */
 	
-	
-	
-	/**
-	 * Constructor without options
-	 * @author José M. Abuín
-	 * @brief This constructor can be used when BWA still does not have any option
-	 */
-	public Bwa(){
-		
-	}
-	
 	/**
 	 * @author José M. Abuín
 	 * @brief This constructor is used when the BWA options are already set
