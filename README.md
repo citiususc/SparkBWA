@@ -82,6 +82,20 @@ Finally, we can execute **SparkBWA** on the cluster. Again, we assume that Spark
 
 	spark_dir/bin/spark-submit --class SparkBWA --master yarn-client --driver-memory 1500m --executor-memory 1500m --executor-cores 1 --archives bwa.zip --verbose --num-executors 32 SparkBWA.jar -algorithm mem -reads paired -index /Data/HumanBase/hg38 -partitions 32 ERR000589_1.filt.fastq ERR000589_2.filt.fastq Output_ERR000589
 
+Running with local mode:
+
+	spark_dir/bin/spark-submit --class SparkBWA 
+	--master local \
+	--driver-java-options "-Djava.library.path=SparkBWA_dir/build/" \
+	SparkBWA.jar \
+	-algorithm mem -reads paired \
+	-index localRef.fasta \
+	-partitions 3 \
+	HDFS_paired1.fastq HDFS_paired2.fastq \
+	Output_dir
+
+SparkBWA_dir is SparkBWA location.
+
 Options:
 * **-algorithm mem** - Sequence alignment algorithm (mem - *BWA-MEM*, aln - *BWA-backtrack*).
 * **-reads paired** - Use single or paired-end reads.
