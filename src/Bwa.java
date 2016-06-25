@@ -67,23 +67,21 @@ public class Bwa implements Serializable {
 	 * @param singleReads		Use paired reads
 	 * @param indexPath			The index path
 	 */
-	public Bwa(boolean useReducer,boolean memAlgorithm, boolean alnAlgorithm, boolean bwaswAlgorithm, String numThreads, boolean pairedReads, boolean singleReads, String indexPath){
-		
-		//The object parameters are configured according the options passed as arguments
-		this.useReducer 		= useReducer;
-		
-		this.memAlgorithm 		= memAlgorithm;
-		this.alnAlgorithm 		= alnAlgorithm;
-		this.bwaswAlgorithm 	= bwaswAlgorithm;
-		
-		this.numThreads 		= numThreads;
-		
-		this.pairedReads 		= pairedReads;
-		this.singleReads 		= singleReads;
-		
-		this.indexPath 			= indexPath;
-		
+	public Bwa(BwaOptions options) {
+		// The object parameters are configured according the options passed as arguments
+		this.useReducer 		= options.isUseReducer();
 
+		this.memAlgorithm 		= options.isMemAlgorithm();
+		this.alnAlgorithm 		= options.isAlnAlgorithm();
+		this.bwaswAlgorithm 	= options.isBwaswAlgorithm();
+
+		this.numThreads 		= options.getNumThreads();
+
+		this.pairedReads 		= options.isPairedReads();
+		this.singleReads 		= options.isSingleReads();
+
+		this.indexPath 			= options.getIndexPath();
+		this.outputHdfsDir 		= options.getOutputPath();
 	}
 
 	/**
