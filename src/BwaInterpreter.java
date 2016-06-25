@@ -21,6 +21,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Iterator;
 
 import org.apache.commons.logging.Log;
@@ -33,6 +34,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.spark.ContextCleaner;
 import org.apache.spark.SparkConf;
 import org.apache.spark.SparkContext;
+import org.apache.spark.rdd.RDD;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
@@ -54,7 +56,7 @@ public class BwaInterpreter {
 	private Configuration conf;				/**< The Configuration */
 
 
-	private BwaRDD dataRDD;					/**< RDD implemented from the BwaRDD class that contains the reads to be processed */
+	private JavaRDD<Tuple2<String,String>> dataRDD;
 
 	private long totalInputLength;			/**< To store the length of the input data */
 	private long blocksize;					/**< To store the block size in HDFS */
@@ -150,6 +152,261 @@ public class BwaInterpreter {
 		this.sparkConf.set("spark.executor.extraJavaOptions", "-Djava.library.path=./bwa.zip/");
 	}
 
+	private JavaRDD<String> handleSingleReadsSorting() {
+		JavaRDD<String> readsRDD = null;
+
+		// Not sorting in HDFS
+		if (!options.isSortFastqReadsHdfs()){
+			long startTime = System.nanoTime();
+
+			LOG.info("JMAbuin::Not sorting in HDFS. Timing: "+startTime);
+
+			// Read the two FASTQ files from HDFS using the FastqInputFormat class
+			JavaPairRDD<Long,String> singleReadsKeyVal = ctx.newAPIHadoopFile(options.getInputPath(), FastqInputFormat.class, Long.class, String.class, this.conf);
+
+			// Sort in memory with no partitioning
+			if((options.getPartitionNumber() == 0) && (options.isSortFastqReads())) {
+				// First, the join operation is performed. After that,
+				// a sortByKey. The resulting values are obtained
+				readsRDD = singleReadsKeyVal.sortByKey().values();
+				LOG.info("JMAbuin:: Sorting in memory without partitioning");
+			}
+
+			// Sort in memory with partitioning
+			else if((options.getPartitionNumber() != 0) && (options.isSortFastqReads())) {
+				singleReadsKeyVal = singleReadsKeyVal.repartition(options.getPartitionNumber());
+				readsRDD = singleReadsKeyVal.sortByKey().values().persist(StorageLevel.MEMORY_ONLY());
+				LOG.info("JMAbuin:: Repartition with sort");
+			}
+
+			// No Sort with no partitioning
+			else if((options.getPartitionNumber() == 0) && (!options.isSortFastqReads())) {
+				LOG.info("JMAbuin:: No sort and no partitioning");
+				readsRDD = singleReadsKeyVal.values();
+			}
+
+			// No Sort with partitioning
+			else{
+				LOG.info("JMAbuin:: No sort with partitioning");
+				int numPartitions = singleReadsKeyVal.partitions().size();
+
+				/*
+				* As in previous cases, the coalesce operation is not suitable
+				* if we want to achieve the maximum speedup, so, repartition
+				* is used.
+				 */
+				if((numPartitions) <= options.getPartitionNumber()){
+					LOG.info("JMAbuin:: Repartition with no sort");
+				}
+				else{
+					LOG.info("JMAbuin:: Repartition(Coalesce) with no sort");
+				}
+
+				readsRDD = singleReadsKeyVal.repartition(options.getPartitionNumber()).values().persist(StorageLevel.MEMORY_ONLY());
+			}
+
+			long endTime = System.nanoTime();
+
+			LOG.info("JMAbuin:: End of sorting. Timing: "+endTime);
+			LOG.info("JMAbuin:: Total time: "+(endTime-startTime)/1e9/60.0+" minutes");
+		}
+
+		// Sorting in HDFS
+		else{
+			long startTime = System.nanoTime();
+
+			// The temp file name
+			this.inputTmpFileName = options.getInputPath().split("/")[options.getInputPath().split("/").length-1]+"-"+options.getInputPath2().split("/")[options.getInputPath2().split("/").length-1];
+
+
+			LOG.info("JMAbuin:: Sorting in HDFS. Start time: "+startTime);
+
+			// The SortInHDFS2 function is used. It returns the corresponding RDD
+			//readsRDD = this.SortInHDFS2(options.getInputPath());
+
+			long endTime = System.nanoTime();
+			LOG.info("JMAbuin:: End of sorting. Timing: "+endTime);
+			LOG.info("JMAbuin:: Total time: "+(endTime-startTime)/1e9/60.0+" minutes");
+		}
+
+		return readsRDD;
+	}
+
+	private JavaRDD<Tuple2<String,String>> handlePairedReadsSorting() {
+		JavaRDD<Tuple2<String,String>> readsRDD = null;
+
+		// Not sorting in HDFS
+		if (!options.isSortFastqReadsHdfs()){
+			long startTime = System.nanoTime();
+
+			LOG.info("JMAbuin::Not sorting in HDFS. Timing: "+startTime);
+
+			// Read the two FASTQ files from HDFS using the FastqInputFormat class
+			JavaPairRDD<Long,String> datasetTmp1 = ctx.newAPIHadoopFile(options.getInputPath(), FastqInputFormat.class, Long.class, String.class, this.conf);
+			JavaPairRDD<Long,String> datasetTmp2 = ctx.newAPIHadoopFile(options.getInputPath2(), FastqInputFormat.class, Long.class, String.class,this.conf);
+			JavaPairRDD<Long,Tuple2<String,String>> pairedReadsRDD = datasetTmp1.join(datasetTmp2);
+
+			datasetTmp1.unpersist();
+			datasetTmp2.unpersist();
+
+			// Sort in memory with no partitioning
+			if((options.getPartitionNumber() == 0) && (options.isSortFastqReads())) {
+				// First, the join operation is performed. After that,
+				// a sortByKey. The resulting values are obtained
+				readsRDD = pairedReadsRDD.sortByKey().values();
+				LOG.info("JMAbuin:: Sorting in memory without partitioning");
+			}
+
+			// Sort in memory with partitioning
+			else if((options.getPartitionNumber()!=0) && (options.isSortFastqReads())) {
+				pairedReadsRDD = pairedReadsRDD.repartition(options.getPartitionNumber());
+				readsRDD = pairedReadsRDD.sortByKey().values().persist(StorageLevel.MEMORY_ONLY());
+				LOG.info("JMAbuin:: Repartition with sort");
+			}
+
+			// No Sort with no partitioning
+			else if((options.getPartitionNumber()==0) && (!options.isSortFastqReads())) {
+				LOG.info("JMAbuin:: No sort and no partitioning");
+			}
+
+			// No Sort with partitioning
+			else{
+				LOG.info("JMAbuin:: No sort with partitioning");
+				int numPartitions = pairedReadsRDD.partitions().size();
+
+				/*
+				* As in previous cases, the coalesce operation is not suitable
+				* if we want to achieve the maximum speedup, so, repartition
+				* is used.
+				 */
+				if((numPartitions) <= options.getPartitionNumber()){
+					LOG.info("JMAbuin:: Repartition with no sort");
+				}
+				else{
+					LOG.info("JMAbuin:: Repartition(Coalesce) with no sort");
+				}
+
+				readsRDD = pairedReadsRDD.repartition(options.getPartitionNumber()).values().persist(StorageLevel.MEMORY_ONLY());
+			}
+
+			long endTime = System.nanoTime();
+
+			LOG.info("JMAbuin:: End of sorting. Timing: "+endTime);
+			LOG.info("JMAbuin:: Total time: "+(endTime-startTime)/1e9/60.0+" minutes");
+		}
+
+		//Sorting in HDFS
+		else{
+			long startTime = System.nanoTime();
+
+			// The temp file name
+			this.inputTmpFileName = options.getInputPath().split("/")[options.getInputPath().split("/").length-1]+"-"+options.getInputPath2().split("/")[options.getInputPath2().split("/").length-1];
+
+
+			LOG.info("JMAbuin:: Sorting in HDFS. Start time: "+startTime);
+
+			// The SortInHDFS2 function is used. It returns the corresponding RDD
+			readsRDD = this.SortInHDFS2(options.getInputPath(), options.getInputPath2());
+
+			long endTime = System.nanoTime();
+			LOG.info("JMAbuin:: End of sorting. Timing: "+endTime);
+			LOG.info("JMAbuin:: Total time: "+(endTime-startTime)/1e9/60.0+" minutes");
+		}
+
+		return readsRDD;
+	}
+
+	/**
+	 * Procedure to perform the alignment
+	 * @author José M. Abuín
+	 */
+	public void MapBwa(JavaRDD<Tuple2<String,String>> readsRDD) {
+		Bwa bwa = new Bwa(this.options);
+		LOG.info("BwaRDD :: hdfs outdir: " + bwa.getOutputHdfsDir());
+
+		// The mapPartitionsWithIndex is used over this RDD to perform the alignment. The resulting sam filenames are returned
+		List<String> returnedValues = readsRDD.mapPartitionsWithIndex(new BwaPairedAlignment(readsRDD.context(), bwa),true).collect();
+		LOG.info("BwaRDD :: Total of returned lines from RDDs :: "+returnedValues.size());
+
+		// In the case of use a reducer the final output has to be stored in just one file
+		if(bwa.isUseReducer()){
+			try {
+				Configuration conf = new Configuration();
+				FileSystem fs = FileSystem.get(conf);
+
+				Path finalHdfsOutputFile = new Path(bwa.getOutputHdfsDir() + "/FullOutput.sam");
+
+				FSDataOutputStream outputFinalStream = fs.create(finalHdfsOutputFile, true);
+
+				// We iterate over the resulting files in HDFS and agregate them into only one file.
+				for (int i = 0; i<returnedValues.size(); i++){
+
+					LOG.info("JMAbuin:: SparkBWA :: Returned file ::"+returnedValues.get(i));
+					BufferedReader br=new BufferedReader(new InputStreamReader(fs.open(new Path(returnedValues.get(i)))));
+
+					String line;
+					line=br.readLine();
+
+					while (line != null){
+						if(i==0 || !line.startsWith("@") ){
+							//outputFinalStream.writeBytes(line+"\n");
+							outputFinalStream.write((line+"\n").getBytes());
+						}
+
+						line=br.readLine();
+					}
+
+					br.close();
+
+					fs.delete(new Path(returnedValues.get(i)), true);
+				}
+
+				outputFinalStream.close();
+
+				fs.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+				LOG.error(e.toString());
+			}
+		} else {
+			for (String outputFile : returnedValues) {
+				LOG.info("JMAbuin:: SparkBWA:: Returned file ::" + outputFile);
+			}
+		}
+	}
+
+	/**
+	 * Runs BWA with the specified options
+	 * @brief This function runs BWA with the input data selected and with the options also selected by the user.
+	 */
+	public void RunBwa(){
+
+		LOG.info("JMAbuin:: Starting BWA");
+
+		//The function to actually run BWA is inside the BwaRDD class.
+		MapBwa(this.dataRDD);
+
+		//After the execution, if the inputTmp exists, it should be deleted
+		try {
+
+			if( (this.inputTmpFileName!= null) && (!this.inputTmpFileName.isEmpty())){
+				FileSystem fs = FileSystem.get(this.conf);
+
+				fs.delete(new Path(this.inputTmpFileName), true);
+
+				fs.close();
+			}
+
+
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			LOG.error(e.toString());
+
+
+		}
+	}
+
 	/**
 	 * Procedure to init the BwaInterpreter configuration parameters
 	 * @author José M. Abuín
@@ -196,158 +453,11 @@ public class BwaInterpreter {
 
 		ContextCleaner cleaner = this.ctx.sc().cleaner().get();
 
-		//The two RDDs to store input reads from FASTQ files in HDFS
-		JavaPairRDD<Long,String> datasetTmp1 = null;
-		JavaPairRDD<Long,String> datasetTmp2 = null;
+		JavaRDD<Tuple2<String,String>> readsRDD = handlePairedReadsSorting();
 
-		//RDD where paired reads are going to be stored under the same key
-		JavaRDD<Tuple2<String,String>> pairedDataRDD = null;
-
-		LOG.info("JMAbuin:: Starting sorting if desired");
-
-		//Not sorting in HDFS
-		if(!options.isSortFastqReadsHdfs()){
-
-			long startTime = System.nanoTime();
-
-			LOG.info("JMAbuin::Not sorting in HDFS. Timing: "+startTime);
-
-			//Read the two FASTQ files from HDFS using the FastqInputFormat class
-			datasetTmp1 = ctx.newAPIHadoopFile(options.getInputPath(), FastqInputFormat.class, Long.class, String.class, this.conf).persist(StorageLevel.MEMORY_ONLY());
-			datasetTmp2 = ctx.newAPIHadoopFile(options.getInputPath2(), FastqInputFormat.class, Long.class, String.class,this.conf).persist(StorageLevel.MEMORY_ONLY());
-
-			//Sort in memory with no partitioning
-			if((options.getPartitionNumber()==0) && (options.isSortFastqReads())){
-
-				//First, the join operation is performed. After that, a sortByKey. The resulting values are obtained
-				pairedDataRDD = datasetTmp1.join(datasetTmp2).sortByKey().values();
-				LOG.info("JMAbuin:: Sorting in memory without partitioning");
-			}
-
-			//Sort in memory with partitioning
-			else if((options.getPartitionNumber()!=0) && (options.isSortFastqReads())){
-				//The first step is perform the join between the two FASTQ files
-				JavaPairRDD<Long,Tuple2<String,String>> tmpRDD = datasetTmp1.join(datasetTmp2).persist(StorageLevel.MEMORY_ONLY());
-
-				tmpRDD = tmpRDD.repartition(options.getPartitionNumber());
-				pairedDataRDD = tmpRDD.sortByKey().values().persist(StorageLevel.MEMORY_ONLY());
-				LOG.info("JMAbuin:: Repartition with sort");
-
-				tmpRDD.unpersist();
-			}
-
-			//No Sort with no partitioning
-			else if((options.getPartitionNumber()==0) && (!options.isSortFastqReads())){
-				//In this case only the join has to be performed
-				pairedDataRDD = datasetTmp1.join(datasetTmp2).values();
-				LOG.info("JMAbuin:: No sort and no partitioning");
-
-			}
-
-			//No Sort with partitioning
-			else{
-				LOG.info("JMAbuin:: No sort with partitioning");
-
-				//Again, the fisrt step is perform the join operation
-				JavaPairRDD<Long,Tuple2<String,String>> tmpRDD = datasetTmp1.join(datasetTmp2).persist(StorageLevel.MEMORY_ONLY());
-
-				int numPartitions = tmpRDD.partitions().size();
-
-				/*
-				 * As in previous cases, the coalesce operation is not suitable if we want to achieve the maximum speedup, so, repartition is used.
-				 */
-				if((numPartitions) <= options.getPartitionNumber()){
-					pairedDataRDD = tmpRDD.repartition(options.getPartitionNumber()).values().persist(StorageLevel.MEMORY_ONLY());
-					LOG.info("JMAbuin:: Repartition with no sort");
-				}
-				else{
-					pairedDataRDD = tmpRDD.repartition(options.getPartitionNumber()).values().persist(StorageLevel.MEMORY_ONLY());
-					LOG.info("JMAbuin:: Repartition(Coalesce) with no sort");
-				}
-
-				tmpRDD.unpersist();
-
-
-			}
-
-			datasetTmp1.unpersist();
-			datasetTmp2.unpersist();
-
-			cleaner.doCleanupRDD(datasetTmp1.id(), true);
-			cleaner.doCleanupRDD(datasetTmp2.id(), true);
-
-			long endTime = System.nanoTime();
-
-			LOG.info("JMAbuin:: End of sorting. Timing: "+endTime);
-			LOG.info("JMAbuin:: Total time: "+(endTime-startTime)/1e9/60.0+" minutes");
-
-		}
-
-		//Sorting in HDFS
-		else{
-			long startTime;
-			long endTime;
-
-			//The temp file name
-			this.inputTmpFileName = options.getInputPath().split("/")[options.getInputPath().split("/").length-1]+"-"+options.getInputPath2().split("/")[options.getInputPath2().split("/").length-1];
-
-			startTime = System.nanoTime();
-
-			LOG.info("JMAbuin:: Sorting in HDFS. Start time: "+startTime);
-
-			//The SortInHDFS2 function is used. It returns the corresponding RDD
-			//pairedDataRDD = this.SortInHDFS(options.getInputPath(), options.getInputPath2());
-			pairedDataRDD = this.SortInHDFS2(options.getInputPath(), options.getInputPath2());//.persist(StorageLevel.MEMORY_ONLY());
-
-			endTime = System.nanoTime();
-			LOG.info("JMAbuin:: End of sorting. Timing: "+endTime);
-			LOG.info("JMAbuin:: Total time: "+(endTime-startTime)/1e9/60.0+" minutes");
-		}
-
-		datasetTmp1 = null;
-		datasetTmp2 = null;
-
-		//After processing the input FASTQ reads, the BwaRDD is created
-		this.dataRDD = new BwaRDD(pairedDataRDD.rdd(),pairedDataRDD.classTag());
-
-		//Also, the BWA options are set
-		this.dataRDD.setOptions(options);
-		this.dataRDD.persist(StorageLevel.MEMORY_ONLY());
+		this.dataRDD = readsRDD;
+		readsRDD.persist(StorageLevel.MEMORY_ONLY());
 	}
-
-
-	/**
-	 * Runs BWA with the specified options
-	 * @brief This function runs BWA with the input data selected and with the options also selected by the user.
-	 */
-	public void RunBwa(){
-
-		LOG.info("JMAbuin:: Starting BWA");
-
-		//The function to actually run BWA is inside the BwaRDD class.
-		this.dataRDD.MapBwa();
-
-		//After the execution, if the inputTmp exists, it should be deleted
-		try {
-
-			if( (this.inputTmpFileName!= null) && (!this.inputTmpFileName.isEmpty())){
-				FileSystem fs = FileSystem.get(this.conf);
-
-				fs.delete(new Path(this.inputTmpFileName), true);
-
-				fs.close();
-			}
-
-
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			LOG.error(e.toString());
-
-
-		}
-	}
-
 
 	/**
 	 * Used to perform the sort operation in HDFS
@@ -516,24 +626,5 @@ public class BwaInterpreter {
 
 			return returnValue;
 		}
-	}
-
-
-	/**
-	 * Function that returns the BwaRDD
-	 * @author José M. Abuín
-	 * @return The BwaRDD that contains the FASTQ reads
-	 */
-	public BwaRDD getDataRDD() {
-		return this.dataRDD;
-	}
-
-	/**
-	 * Function that sets the BwaRDD that contains the FASTQ reads
-	 * @author José M. Abuín
-	 * @param dataRDD The RDD containing the FASTQ reads
-	 */
-	public void setDataRDD(BwaRDD dataRDD) {
-		this.dataRDD = dataRDD;
 	}
 }
