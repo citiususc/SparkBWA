@@ -320,7 +320,7 @@ public class Bwa implements Serializable {
 			//Aln algorithm and paired reads
 			if (this.pairedReads) {
 				//In the two first steps, the aln option is used
-				if ((alnStep == 0) || (alnStep == 1)){
+				if (alnStep < 2){
 					algorithm = "aln";
 				}
 				//In the third one, the "sampe" has to be performed
