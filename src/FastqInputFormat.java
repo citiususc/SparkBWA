@@ -36,13 +36,4 @@ public class FastqInputFormat extends FileInputFormat<Long,String> {
 	public RecordReader<Long, String> createRecordReader( InputSplit inputSplit, TaskAttemptContext taskAttemptContext) {
 		return new FastqRecordReader();
 	}
-
-	
-	/*
-	@Override
-	public boolean isSplitable(JobContext context, Path file) {
-		return false;
-	} 
-	*/
-
 }
