@@ -34,7 +34,6 @@ public class Bwa implements Serializable {
 	//Option to use the reduce phase
 	private boolean useReducer 		= false;			/**< The option to use the reduce phase */
 
-
 	//Algorithms boolean variables
 	private boolean memAlgorithm 	= false;			/**< The option to use the MEM algorithm */
 	private boolean alnAlgorithm 	= false;			/**< The option to use the ALN algorithm */
@@ -49,13 +48,13 @@ public class Bwa implements Serializable {
 
 	//Index path
 	private String indexPath 		= "";				/**< The index path */
-	
+
 	private String inputFile 		= "";				/**< The first of the FASTQ files */
 	private String inputFile2 		= "";				/**< The second of the FASTQ files */
 	private String outputFile 		= "";				/**< The output SAM file */
-	
+
 	private String outputHdfsDir	= "";				/**< The HDFS directory where the output files are going to be stored */
-	
+
 	/**
 	 * @author José M. Abuín
 	 * @brief This constructor is used when the BWA options are already set
