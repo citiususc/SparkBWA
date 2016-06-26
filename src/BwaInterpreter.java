@@ -329,49 +329,50 @@ public class BwaInterpreter {
 		LOG.info("BwaRDD :: Total of returned lines from RDDs :: "+returnedValues.size());
 
 		// In the case of use a reducer the final output has to be stored in just one file
-		if(bwa.isUseReducer()){
-			try {
-				Configuration conf = new Configuration();
-				FileSystem fs = FileSystem.get(conf);
-
-				Path finalHdfsOutputFile = new Path(bwa.getOutputHdfsDir() + "/FullOutput.sam");
-
-				FSDataOutputStream outputFinalStream = fs.create(finalHdfsOutputFile, true);
-
-				// We iterate over the resulting files in HDFS and agregate them into only one file.
-				for (int i = 0; i<returnedValues.size(); i++){
-
-					LOG.info("JMAbuin:: SparkBWA :: Returned file ::"+returnedValues.get(i));
-					BufferedReader br=new BufferedReader(new InputStreamReader(fs.open(new Path(returnedValues.get(i)))));
-
-					String line;
-					line=br.readLine();
-
-					while (line != null){
-						if(i==0 || !line.startsWith("@") ){
-							//outputFinalStream.writeBytes(line+"\n");
-							outputFinalStream.write((line+"\n").getBytes());
-						}
-
-						line=br.readLine();
-					}
-
-					br.close();
-
-					fs.delete(new Path(returnedValues.get(i)), true);
-				}
-
-				outputFinalStream.close();
-
-				fs.close();
-			} catch (IOException e) {
-				e.printStackTrace();
-				LOG.error(e.toString());
-			}
+		if (bwaInstance.isUseReducer()){
+			combineOutputSamFiles();
 		} else {
 			for (String outputFile : returnedValues) {
 				LOG.info("JMAbuin:: SparkBWA:: Returned file ::" + outputFile);
 			}
+		}
+	}
+
+
+	private void combineOutputSamFiles(String outputHdfsDir, List<String> returnedValues) {
+		try {
+			Configuration conf = new Configuration();
+			FileSystem fs = FileSystem.get(conf);
+
+			Path finalHdfsOutputFile = new Path(outputHdfsDir + "/FullOutput.sam");
+			FSDataOutputStream outputFinalStream = fs.create(finalHdfsOutputFile, true);
+
+			// We iterate over the resulting files in HDFS and agregate them into only one file.
+			for (int i = 0; i < returnedValues.size(); i++){
+				LOG.info("JMAbuin:: SparkBWA :: Returned file ::"+returnedValues.get(i));
+				BufferedReader br=new BufferedReader(new InputStreamReader(fs.open(new Path(returnedValues.get(i)))));
+
+				String line;
+				line=br.readLine();
+
+				while (line != null){
+					if(i==0 || !line.startsWith("@") ){
+						//outputFinalStream.writeBytes(line+"\n");
+						outputFinalStream.write((line+"\n").getBytes());
+					}
+
+					line=br.readLine();
+				}
+				br.close();
+
+				fs.delete(new Path(returnedValues.get(i)), true);
+			}
+
+			outputFinalStream.close();
+			fs.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+			LOG.error(e.toString());
 		}
 	}
 
