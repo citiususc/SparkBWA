@@ -53,9 +53,6 @@ public class BwaSingleAlignment extends BwaAlignmentBase implements Function2<In
     public Iterator<String> call(Integer arg0, Iterator<String> arg1)
             throws Exception {
 
-
-
-        // STEP 1: Input fastq reads tmp file creation
         LOG.info("JMAbuin:: Tmp dir: "+this.tmpDir);
         String fastqFileName1 = this.tmpDir+this.appId+"-RDD"+arg0+"_1";
 
@@ -66,7 +63,7 @@ public class BwaSingleAlignment extends BwaAlignmentBase implements Function2<In
         BufferedWriter bw1;
 
         ArrayList<String> returnedValues = new ArrayList<String>();
-        //We write the data contained in this split into the two tmp files
+
         try {
             fos1 = new FileOutputStream(FastqFile1);
             bw1 = new BufferedWriter(new OutputStreamWriter(fos1));
@@ -85,12 +82,9 @@ public class BwaSingleAlignment extends BwaAlignmentBase implements Function2<In
             //We do not need the input data anymore, as it is written in a local file
             arg1 = null;
 
-            // STEP 2: Now the options are parsed and BWA is launched by using JNI
-            String outputSamFileName = this.getOutputSamFilename(arg0);
-            this.alignReads(outputSamFileName, fastqFileName1, null);
-
-            // STEP 3: Copy result to HDFS and delete temporary files
-            returnedValues = this.copyResults(outputSamFileName);
+            returnedValues = this.runAlignmentProcess(arg0, fastqFileName1, null);
+            // Delete the temporary file, as is have now been copied to the
+            // output directory
             FastqFile1.delete();
 
         } catch (FileNotFoundException e) {

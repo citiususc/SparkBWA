@@ -87,7 +87,7 @@ public class BwaPairedAlignment extends BwaAlignmentBase implements Function2<In
 
             Tuple2<String,String> newFastqRead;
 
-            while(arg1.hasNext()){
+            while(arg1.hasNext()) {
                 newFastqRead = arg1.next();
 
                 bw1.write(newFastqRead._1.toString());
@@ -100,19 +100,12 @@ public class BwaPairedAlignment extends BwaAlignmentBase implements Function2<In
             bw1.close();
             bw2.close();
 
-            //We do not need the input data anymore, as it is written in a local file
             arg1 = null;
 
-            // STEP 2: Now the options are parsed and BWA is launched by using JNI
+            returnedValues = this.runAlignmentProcess(arg0, fastqFileName1, fastqFileName2);
 
-            //The output filename (without the tmp directory)
-            String outputSamFileName = this.getOutputSamFilename(arg0);
-
-            this.alignReads(outputSamFileName, fastqFileName1, fastqFileName2);
-
-            // STEP 3: Copy result to HDFS and delete temporary files
-            returnedValues = this.copyResults(outputSamFileName);
-
+            // Delete temporary files, as they have now been copied to the
+            // output directory
             LOG.info("JMAbuin:: Deleting file: "+fastqFileName1);
             FastqFile1.delete();
             LOG.info("JMAbuin:: Deleting file: "+fastqFileName2);

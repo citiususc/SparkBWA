@@ -140,7 +140,16 @@ public abstract class BwaAlignmentBase implements Serializable {
             return returnedValues;
     }
 
-    public String getOutputSamFilename(int readBatchID) {
+    public String getOutputSamFilename(Integer readBatchID) {
         return this.appName+"-"+this.appId+"-"+readBatchID+".sam";
+    }
+
+    public ArrayList<String> runAlignmentProcess(Integer readBatchID, String fastqFileName1, String fastqFileName2) {
+        //The output filename (without the tmp directory)
+        String outputSamFileName = this.getOutputSamFilename(readBatchID);
+        this.alignReads(outputSamFileName, fastqFileName1, fastqFileName2);
+
+        // Copy the result to HDFS
+        return this.copyResults(outputSamFileName);
     }
 }
