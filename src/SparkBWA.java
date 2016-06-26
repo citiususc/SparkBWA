@@ -21,12 +21,7 @@ public class SparkBWA {
 
 
 	public static void main(String[] args) {
-	
 		BwaInterpreter newBwa = new BwaInterpreter(args);
-		
-		//newBwa.initInterpreter();
-		//BwaRDD newBwa = new BwaRDD(args);
-		
 		newBwa.RunBwa();
 	}
 
