@@ -228,6 +228,7 @@ public class BwaInterpreter {
 			LOG.info("JMAbuin:: End of sorting. Timing: "+endTime);
 			LOG.info("JMAbuin:: Total time: "+(endTime-startTime)/1e9/60.0+" minutes");
 		}
+		readsRDD.persist(StorageLevel.MEMORY_ONLY());
 
 		return readsRDD;
 	}
@@ -270,7 +271,7 @@ public class BwaInterpreter {
 			}
 
 			// No Sort with partitioning
-			else{
+			else {
 				LOG.info("JMAbuin:: No sort with partitioning");
 				int numPartitions = pairedReadsRDD.partitions().size();
 
@@ -312,6 +313,7 @@ public class BwaInterpreter {
 			LOG.info("JMAbuin:: End of sorting. Timing: "+endTime);
 			LOG.info("JMAbuin:: Total time: "+(endTime-startTime)/1e9/60.0+" minutes");
 		}
+		readsRDD.persist(StorageLevel.MEMORY_ONLY());
 
 		return readsRDD;
 	}
@@ -320,22 +322,14 @@ public class BwaInterpreter {
 	 * Procedure to perform the alignment
 	 * @author José M. Abuín
 	 */
-	public void MapBwa(JavaRDD<Tuple2<String,String>> readsRDD) {
-		Bwa bwa = new Bwa(this.options);
-		LOG.info("BwaRDD :: hdfs outdir: " + bwa.getOutputHdfsDir());
-
+	private List<String> MapPairedBwa(Bwa bwa, JavaRDD<Tuple2<String,String>> readsRDD) {
 		// The mapPartitionsWithIndex is used over this RDD to perform the alignment. The resulting sam filenames are returned
-		List<String> returnedValues = readsRDD.mapPartitionsWithIndex(new BwaPairedAlignment(readsRDD.context(), bwa),true).collect();
-		LOG.info("BwaRDD :: Total of returned lines from RDDs :: "+returnedValues.size());
+		return readsRDD.mapPartitionsWithIndex(new BwaPairedAlignment(readsRDD.context(), bwa), true).collect();
+	}
 
-		// In the case of use a reducer the final output has to be stored in just one file
-		if (bwaInstance.isUseReducer()){
-			combineOutputSamFiles();
-		} else {
-			for (String outputFile : returnedValues) {
-				LOG.info("JMAbuin:: SparkBWA:: Returned file ::" + outputFile);
-			}
-		}
+	private List<String> MapSingleBwa(Bwa bwa, JavaRDD<String> readsRDD) {
+		// The mapPartitionsWithIndex is used over this RDD to perform the alignment. The resulting sam filenames are returned
+		return readsRDD.mapPartitionsWithIndex(new BwaSingleAlignment(readsRDD.context(), bwa), true).collect();
 	}
 
 
@@ -381,15 +375,31 @@ public class BwaInterpreter {
 	 * @brief This function runs BWA with the input data selected and with the options also selected by the user.
 	 */
 	public void RunBwa(){
-
 		LOG.info("JMAbuin:: Starting BWA");
+		Bwa bwa = new Bwa(this.options);
 
-		//The function to actually run BWA is inside the BwaRDD class.
-		MapBwa(this.dataRDD);
+		List<String> returnedValues;
+		if (bwa.isPairedReads()) {
+			JavaRDD<Tuple2<String,String>> readsRDD = handlePairedReadsSorting();
+			returnedValues = MapPairedBwa(bwa, readsRDD);
+		} else {
+			JavaRDD<String> readsRDD = handleSingleReadsSorting();
+			returnedValues = MapSingleBwa(bwa, readsRDD);
+		}
+
+		LOG.info("BwaRDD :: Total of returned lines from RDDs :: "+returnedValues.size());
+
+		// In the case of use a reducer the final output has to be stored in just one file
+		if (bwa.isUseReducer()){
+			combineOutputSamFiles(bwa.getOutputHdfsDir(), returnedValues);
+		} else {
+			for (String outputFile : returnedValues) {
+				LOG.info("JMAbuin:: SparkBWA:: Returned file ::" + outputFile);
+			}
+		}
 
 		//After the execution, if the inputTmp exists, it should be deleted
 		try {
-
 			if( (this.inputTmpFileName!= null) && (!this.inputTmpFileName.isEmpty())){
 				FileSystem fs = FileSystem.get(this.conf);
 
@@ -453,11 +463,6 @@ public class BwaInterpreter {
 		setSparkSettings();
 
 		ContextCleaner cleaner = this.ctx.sc().cleaner().get();
-
-		JavaRDD<Tuple2<String,String>> readsRDD = handlePairedReadsSorting();
-
-		this.dataRDD = readsRDD;
-		readsRDD.persist(StorageLevel.MEMORY_ONLY());
 	}
 
 	/**
