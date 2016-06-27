@@ -260,14 +260,7 @@ public class Bwa implements Serializable {
 		this.outputHdfsDir = outputHdfsDir;
 	}
 
-	/**
-	 * This Function is responsible for creating the options that are going to be passed to BWA
-	 * @param alnStep An integer that indicates at with phase of the aln step the program is
-	 * @return A Strings array containing the options which BWA was launched
-	 */
-	public int run(int alnStep) {
-		String[] parametersArray;
-
+	private String[] parseParameters(int alnStep) {
 		ArrayList<String> parameters = new ArrayList<String>();
 
 		//The first parameter is always "bwa"======================================================
@@ -371,12 +364,18 @@ public class Bwa implements Serializable {
 			parameters.add(this.inputFile);
 		}
 
-		//Initialization of the array with the previous parameters
-		parametersArray = new String[parameters.size()];
+		String[] parametersArray = new String[parameters.size()];
+		return parameters.toArray(parametersArray);
+    }
 
-		for(int i = 0; i< parameters.size(); i++){
-			parametersArray[i] = parameters.get(i);
-		}
+	/**
+	 * This Function is responsible for creating the options that are going to be passed to BWA
+	 * @param alnStep An integer that indicates at with phase of the aln step the program is
+	 * @return A Strings array containing the options which BWA was launched
+	 */
+	public int run(int alnStep) {
+		// Get obtain the list of arguments passed by the user
+		String[] parametersArray = parseParameters(alnStep);
 
 		// Call to JNI with the selected parameters
 		int returnCode = BwaJni.Bwa_Jni(parametersArray);
