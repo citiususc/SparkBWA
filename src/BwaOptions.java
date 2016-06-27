@@ -44,8 +44,10 @@ public class BwaOptions {
 	private boolean alnAlgorithm 		= false;	/**< The option to use the ALN algorithm */
 	private boolean bwaswAlgorithm 		= false;	/**< The option to use the BWASW algorithm */
 
+
 	//private boolean memThread 		= false;
 	private String numThreads 			= "0";		/**< The number of threads to use with the threaded version */
+	private String bwaArgs  			= "";		/**< The arguments passed directly to BWA */
 
 	//Paired or single reads
 	private boolean pairedReads 		= true;		/**< The option to use paired reads */
@@ -109,7 +111,7 @@ public class BwaOptions {
 	 * @param args The arguments that the user is going to provide from the Linux console
 	 */
 	public BwaOptions(String [] args){
-		
+
 		//Parse arguments
 		for(String argumento: args){
 			LOG.info("JMAbuin:: Received argument: "+argumento);
@@ -127,7 +129,7 @@ public class BwaOptions {
 		CommandLineParser parser = new BasicParser();
 		CommandLine cmd;
 		try {
-			cmd = parser.parse( options, args);
+			cmd = parser.parse(options, args);
 
 
 			//Number of threads per map task
@@ -184,6 +186,10 @@ public class BwaOptions {
 			//Partition number
 			if(cmd.hasOption("partitions")){
 				partitionNumber = Integer.parseInt(cmd.getOptionValue("partitions"));
+			}
+
+			if(cmd.hasOption("bwaArgs")){
+				bwaArgs = cmd.getOptionValue("bwaArgs");
 			}
 
 			//We look if we want the paired or single algorithm
@@ -291,6 +297,11 @@ public class BwaOptions {
 
 		options.addOption(reads);
 
+		// Options to BWA
+		Option bwaArgs = new Option("bwaArgs", true, "Arguments passed directly to BWA");
+		bwaArgs.setArgName("\"BWA arguments\"");
+		options.addOption(bwaArgs);
+
 		//Reducer option
 		Option reducer = new Option("r",false,"Enables the reducer phase - setUseReducer(boolean)");
 		options.addOption(reducer);
@@ -317,6 +328,14 @@ public class BwaOptions {
 
 
 		return options;
+	}
+
+	public String getBwaArgs() {
+		return bwaArgs;
+	}
+
+	public void setBwaArgs(String bwaArgs) {
+	    this.bwaArgs = bwaArgs;
 	}
 
 	/**

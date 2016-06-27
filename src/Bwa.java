@@ -43,6 +43,7 @@ public class Bwa implements Serializable {
 
 	private boolean memThread 				= false;			/**< The option to use the threaded version */
 	private String numThreads 				= "0";				/**< The number of threads to use with the threaded version */
+	private String bwaArgs  				= "";				/**< The args passed directly to bwa */
 
 	//Paired or single reads
 	private boolean pairedReads 			= false;			/**< The option to use paired reads */
@@ -78,6 +79,7 @@ public class Bwa implements Serializable {
 		this.bwaswAlgorithm 	= options.isBwaswAlgorithm();
 
 		this.numThreads 		= options.getNumThreads();
+		this.bwaArgs 			= options.getBwaArgs();
 
 		this.pairedReads 		= options.isPairedReads();
 		this.singleReads 		= options.isSingleReads();
@@ -370,6 +372,10 @@ public class Bwa implements Serializable {
 			parameters.add("-t");
 			parameters.add(this.numThreads);
 		}
+
+		if (this.bwaArgs != "") {
+		    parameters.add(this.bwaArgs);
+        }
 
 		//The fifth, the index path===============================================================
 		parameters.add(this.indexPath);
