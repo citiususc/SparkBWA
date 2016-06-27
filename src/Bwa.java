@@ -41,8 +41,6 @@ public class Bwa implements Serializable {
 	private boolean alnAlgorithm 			= false;			/**< The option to use the ALN algorithm */
 	private boolean bwaswAlgorithm 			= false;			/**< The option to use the BWASW algorithm */
 
-	private boolean memThread 				= false;			/**< The option to use the threaded version */
-	private String numThreads 				= "0";				/**< The number of threads to use with the threaded version */
 	private String bwaArgs  				= "";				/**< The args passed directly to bwa */
 
 	//Paired or single reads
@@ -65,7 +63,6 @@ public class Bwa implements Serializable {
 	 * @param memAlgorithm		The option to use the MEM algorithm
 	 * @param alnAlgorithm		The option to use the ALN algorithm
 	 * @param bwaswAlgorithm	The option to use the BWASW algorithm
-	 * @param numThreads		The number of threads to use in the BWA threaded version
 	 * @param pairedReads		Use single reads
 	 * @param singleReads		Use paired reads
 	 * @param indexPath			The index path
@@ -78,7 +75,6 @@ public class Bwa implements Serializable {
 		this.alnAlgorithm 		= options.isAlnAlgorithm();
 		this.bwaswAlgorithm 	= options.isBwaswAlgorithm();
 
-		this.numThreads 		= options.getNumThreads();
 		this.bwaArgs 			= options.getBwaArgs();
 
 		this.pairedReads 		= options.isPairedReads();
@@ -198,38 +194,6 @@ public class Bwa implements Serializable {
 	 */
 	public void setBwaswAlgorithm(boolean bwaswAlgorithm) {
 		this.bwaswAlgorithm = bwaswAlgorithm;
-	}
-
-	/**
-	 * Getter for the option of using the BWA threaded version or not
-	 * @return A boolean value that is true if the threaded version of BWA is going to be used or false otherwise
-	 */
-	public boolean isMemThread() {
-		return memThread;
-	}
-
-	/**
-	 * Setter for the option of using the BWA threaded version or not
-	 * @param memThread A boolean value that is true if the thread version is going to be used or false otherwise
-	 */
-	public void setMemThread(boolean memThread) {
-		this.memThread = memThread;
-	}
-
-	/**
-	 * Getter for the number of threads to use with the threaded version
-	 * @return The number of threads to use in the BWA threaded version
-	 */
-	public String getNumThreads() {
-		return numThreads;
-	}
-
-	/**
-	 * Setter for the number of threads to use with the threaded version
-	 * @param numThreads The number of threads to use in the BWA threaded version
-	 */
-	public void setNumThreads(String numThreads) {
-		this.numThreads = numThreads;
 	}
 
 	/**
@@ -364,13 +328,6 @@ public class Bwa implements Serializable {
 			else if(alnStep == 1 && this.pairedReads){
 				parameters.add(this.inputFile2+".sai");
 			}
-		}
-
-		//The fourth parameter, in case of use it, is the thread number============================
-		//if(this.memThread){
-		if(!this.numThreads.equals("0")){
-			parameters.add("-t");
-			parameters.add(this.numThreads);
 		}
 
 		if (this.bwaArgs != "") {

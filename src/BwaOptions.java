@@ -44,9 +44,6 @@ public class BwaOptions {
 	private boolean alnAlgorithm 		= false;	/**< The option to use the ALN algorithm */
 	private boolean bwaswAlgorithm 		= false;	/**< The option to use the BWASW algorithm */
 
-
-	//private boolean memThread 		= false;
-	private String numThreads 			= "0";		/**< The number of threads to use with the threaded version */
 	private String bwaArgs  			= "";		/**< The arguments passed directly to BWA */
 
 	//Paired or single reads
@@ -131,11 +128,6 @@ public class BwaOptions {
 		try {
 			cmd = parser.parse(options, args);
 
-
-			//Number of threads per map task
-			if(cmd.hasOption("threads")){
-				numThreads = cmd.getOptionValue("threads");
-			}
 
 			//We look for the algorithm
 			if (cmd.hasOption("algorithm")) {
@@ -285,12 +277,6 @@ public class BwaOptions {
 
 		options.addOption(algorithm);
 
-		//Number of threads
-		Option threads = new Option("threads",true,"Number of threads used per map - setNumThreads(string)");
-		threads.setArgName("Threads number");
-
-		options.addOption(threads);
-
 		//Paired or single reads
 		Option reads = new Option("reads",true,"Type of reads to use during alignment");
 		reads.setArgName("paired|single");
@@ -432,22 +418,6 @@ public class BwaOptions {
 			this.setAlnAlgorithm(false);
 			this.setMemAlgorithm(false);
 		}
-	}
-
-	/**
-	 * Getter for the number of threads to use with the threaded version of BWA
-	 * @return The number of threads to use. If it is 0, it is sequential
-	 */
-	public String getNumThreads() {
-		return numThreads;
-	}
-
-	/**
-	 * Setter for the number of threads to use in the threaded version of BWA
-	 * @param numThreads Integer that represents the number of threads to use
-	 */
-	public void setNumThreads(String numThreads) {
-		this.numThreads = numThreads;
 	}
 
 	/**
