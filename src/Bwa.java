@@ -157,7 +157,7 @@ public class Bwa implements Serializable {
 	public boolean isMemAlgorithm() {
 		return memAlgorithm;
 	}
-	
+
 	/**
 	 * Setter for the option of using the mem algorithm or not
 	 * @param memAlgorithm A boolean value that is true if the mem algorithm is going to be used or false otherwise
@@ -293,7 +293,7 @@ public class Bwa implements Serializable {
 	public void setOutputHdfsDir(String outputHdfsDir) {
 		this.outputHdfsDir = outputHdfsDir;
 	}
-	
+
 	/**
 	 * This Function is responsible for creating the options that are going to be passed to BWA
 	 * @param alnStep An integer that indicates at with phase of the aln step the program is
@@ -301,23 +301,21 @@ public class Bwa implements Serializable {
 	 */
 	public int run(int alnStep) {
 		String[] parametersArray;
-		
+
 		ArrayList<String> parameters = new ArrayList<String>();
-		
+
 		//The first parameter is always "bwa"======================================================
 		parameters.add("bwa");
-		
-		
+
 		//The second parameter is the algorithm election===========================================
 		String algorithm = "";
-		
+
 		//Case of "mem" algorithm
 		if(this.memAlgorithm && !this.alnAlgorithm && !this.bwaswAlgorithm){
 			algorithm = "mem";
 		}
 		//Case of "aln" algorithm
 		else if(!this.memAlgorithm && this.alnAlgorithm && !this.bwaswAlgorithm){
-			
 			//Aln algorithm and paired reads
 			if (this.pairedReads) {
 				//In the two first steps, the aln option is used
@@ -340,19 +338,18 @@ public class Bwa implements Serializable {
 					algorithm = "samse";
 				}
 			}
-			
+
 		}
 		//The last case is the "bwasw"
 		else if(!this.memAlgorithm && !this.alnAlgorithm && this.bwaswAlgorithm){
 			algorithm = "bwasw";
 		}
-		
+
 		parameters.add(algorithm);
-		
+
 		//The third parameter is the output file===================================================
-		
 		parameters.add("-f");
-		
+
 		//If the algorithm is "mem", "sampe" or "samse", the output is a .sam file
 		if(algorithm.equals("mem") || algorithm.equals("sampe") || algorithm.equals("samse")){
 			parameters.add(this.outputFile);
