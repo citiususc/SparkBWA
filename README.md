@@ -85,6 +85,8 @@ Finally, we can execute **SparkBWA** on the cluster. Again, we assume that Spark
 Options:
 * **-algorithm mem** - Sequence alignment algorithm (mem - *BWA-MEM*, aln - *BWA-backtrack*).
 * **-reads paired** - Use single or paired-end reads.
+* **-bwaArgs** - Can be used to pass arguments directly to BWA (ex. "-t 4" to
+  specify the amount of threads to use per instance of BWA).
 * **-index** - Index prefix is specified. The index must be available in all the cluster nodes at the same location.
 * The last three arguments are the input and output HDFS files.
 
