@@ -330,8 +330,8 @@ public class Bwa implements Serializable {
 		}
 
 		if (this.bwaArgs != "") {
-		    parameters.add(this.bwaArgs);
-        }
+			parameters.add(this.bwaArgs);
+		}
 
 		//The fifth, the index path===============================================================
 		parameters.add(this.indexPath);
