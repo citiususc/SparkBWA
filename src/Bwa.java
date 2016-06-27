@@ -342,7 +342,7 @@ public class Bwa implements Serializable {
 		if (algorithm.equals("mem") || algorithm.equals("bwasw")){
 			parameters.add(this.inputFile);
 
-			if(this.pairedReads){
+			if (this.pairedReads){
 				parameters.add(this.inputFile2);
 			}
 		}
@@ -382,9 +382,9 @@ public class Bwa implements Serializable {
 		int returnCode = BwaJni.Bwa_Jni(parametersArray);
 
 		if (returnCode != 0) {
-		    LOG.error("BWA:: BWA exited with error code: " + String.valueOf(returnCode));
-		    return returnCode;
-        }
+			LOG.error("BWA:: BWA exited with error code: " + String.valueOf(returnCode));
+			return returnCode;
+		}
 
 		// The run was successful
 		return 0;
