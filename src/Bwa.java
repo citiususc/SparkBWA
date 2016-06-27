@@ -19,6 +19,8 @@
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * Class that communicates with BWA
@@ -29,31 +31,31 @@ import java.util.ArrayList;
 public class Bwa implements Serializable {
 
 	private static final long serialVersionUID = 1L;	/**< The version ID */
-
+	private static final Log LOG = LogFactory.getLog(Bwa.class);
 
 	//Option to use the reduce phase
-	private boolean useReducer 		= false;			/**< The option to use the reduce phase */
+	private boolean useReducer 				= false;			/**< The option to use the reduce phase */
 
 	//Algorithms boolean variables
-	private boolean memAlgorithm 	= false;			/**< The option to use the MEM algorithm */
-	private boolean alnAlgorithm 	= false;			/**< The option to use the ALN algorithm */
-	private boolean bwaswAlgorithm 	= false;			/**< The option to use the BWASW algorithm */
+	private boolean memAlgorithm 			= false;			/**< The option to use the MEM algorithm */
+	private boolean alnAlgorithm 			= false;			/**< The option to use the ALN algorithm */
+	private boolean bwaswAlgorithm 			= false;			/**< The option to use the BWASW algorithm */
 
-	private boolean memThread 		= false;			/**< The option to use the threaded version */
-	private String numThreads 		= "0";				/**< The number of threads to use with the threaded version */
+	private boolean memThread 				= false;			/**< The option to use the threaded version */
+	private String numThreads 				= "0";				/**< The number of threads to use with the threaded version */
 
 	//Paired or single reads
-	private boolean pairedReads 	= false;			/**< The option to use paired reads */
-	private boolean singleReads 	= false;			/**< The option to use single reads */
+	private boolean pairedReads 			= false;			/**< The option to use paired reads */
+	private boolean singleReads 			= false;			/**< The option to use single reads */
 
 	//Index path
-	private String indexPath 		= "";				/**< The index path */
+	private String indexPath 				= "";				/**< The index path */
 
-	private String inputFile 		= "";				/**< The first of the FASTQ files */
-	private String inputFile2 		= "";				/**< The second of the FASTQ files */
-	private String outputFile 		= "";				/**< The output SAM file */
+	private String inputFile 				= "";				/**< The first of the FASTQ files */
+	private String inputFile2 				= "";				/**< The second of the FASTQ files */
+	private String outputFile 				= "";				/**< The output SAM file */
 
-	private String outputHdfsDir	= "";				/**< The HDFS directory where the output files are going to be stored */
+	private String outputHdfsDir			= "";				/**< The HDFS directory where the output files are going to be stored */
 
 	/**
 	 * @author José M. Abuín
