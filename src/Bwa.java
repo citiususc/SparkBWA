@@ -313,6 +313,10 @@ public class Bwa implements Serializable {
 
 		parameters.add(algorithm);
 
+		if (this.bwaArgs != "") {
+			parameters.add(this.bwaArgs);
+		}
+
 		//The third parameter is the output file===================================================
 		parameters.add("-f");
 
@@ -327,10 +331,6 @@ public class Bwa implements Serializable {
 		else {
 			// For all other algorithms the output is a SAM file.
 			parameters.add(this.outputFile);
-		}
-
-		if (this.bwaArgs != "") {
-			parameters.add(this.bwaArgs);
 		}
 
 		//The fifth, the index path===============================================================
