@@ -306,7 +306,7 @@ public class Bwa implements Serializable {
 
 		parameters.add(algorithm);
 
-		if (this.bwaArgs != "") {
+		if (!this.bwaArgs.isEmpty()) {
 			parameters.add(this.bwaArgs);
 		}
 
