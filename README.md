@@ -4,6 +4,7 @@
 
 * **BWA-MEM**
 * **BWA-backtrack**
+* **BWASW**
 
 All of them work with paired-end reads.
 
