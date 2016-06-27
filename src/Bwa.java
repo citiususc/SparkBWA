@@ -316,18 +316,17 @@ public class Bwa implements Serializable {
 		//The third parameter is the output file===================================================
 		parameters.add("-f");
 
-		//If the algorithm is "mem", "sampe" or "samse", the output is a .sam file
-		if(algorithm.equals("mem") || algorithm.equals("sampe") || algorithm.equals("samse")){
-			parameters.add(this.outputFile);
-		}
-		//If is "aln", the output is a .sai file
-		else if(algorithm.equals("aln")){
-			if(alnStep == 0){
+		if (algorithm.equals("aln")){
+			if (alnStep == 0){
 				parameters.add(this.inputFile+".sai");
 			}
-			else if(alnStep == 1 && this.pairedReads){
+			else if (alnStep == 1 && this.pairedReads){
 				parameters.add(this.inputFile2+".sai");
 			}
+		}
+		else {
+			// For all other algorithms the output is a SAM file.
+			parameters.add(this.outputFile);
 		}
 
 		if (this.bwaArgs != "") {
