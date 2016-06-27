@@ -6,7 +6,7 @@
 * **BWA-backtrack**
 * **BWASW**
 
-All of them work with paired-end reads.
+All of them work with single-reads and paired-end reads.
 
 If you use **SparkBWA**, please cite this article:
 
