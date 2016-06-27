@@ -339,7 +339,7 @@ public class Bwa implements Serializable {
 		//The sixth, the input files===============================================================
 
 		//If the "mem" algorithm, we add the FASTQ files
-		if(algorithm.compareTo("mem")==0){
+		if (algorithm.equals("mem") || algorithm.equals("bwasw")){
 			parameters.add(this.inputFile);
 
 			if(this.pairedReads){
