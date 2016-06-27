@@ -348,7 +348,7 @@ public class Bwa implements Serializable {
 		}
 
 		//If "aln" aln step is 0 or 1, also FASTQ files
-		else if(algorithm.compareTo("aln")==0){
+		else if(algorithm.equals("aln")){
 			if(alnStep == 0){
 				parameters.add(this.inputFile);
 			}
