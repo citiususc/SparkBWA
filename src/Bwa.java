@@ -299,8 +299,7 @@ public class Bwa implements Serializable {
 	 * @param alnStep An integer that indicates at with phase of the aln step the program is
 	 * @return A Strings array containing the options which BWA was launched
 	 */
-	public String[] run(int alnStep){
-		
+	public int run(int alnStep) {
 		String[] parametersArray;
 		
 		ArrayList<String> parameters = new ArrayList<String>();
@@ -367,72 +366,68 @@ public class Bwa implements Serializable {
 				parameters.add(this.inputFile2+".sai");
 			}
 		}
-		
-				
+
 		//The fourth parameter, in case of use it, is the thread number============================
 		//if(this.memThread){
 		if(!this.numThreads.equals("0")){
 			parameters.add("-t");
 			parameters.add(this.numThreads);
 		}
-		
-		//The fifth, the index path================================================================
-		
+
+		//The fifth, the index path===============================================================
 		parameters.add(this.indexPath);
-		
+
 		//The sixth, the input files===============================================================
-		
+
 		//If the "mem" algorithm, we add the FASTQ files
 		if(algorithm.compareTo("mem")==0){
 			parameters.add(this.inputFile);
-			
+
 			if(this.pairedReads){
 				parameters.add(this.inputFile2);
 			}
-			
-			
 		}
-		
+
 		//If "aln" aln step is 0 or 1, also FASTQ files
 		else if(algorithm.compareTo("aln")==0){
 			if(alnStep == 0){
 				parameters.add(this.inputFile);
 			}
 			else if(alnStep == 1 && this.pairedReads){
-				parameters.add(this.inputFile2);	
+				parameters.add(this.inputFile2);
 			}
-			
 		}
-		
+
 		//If "sampe" the input files are the .sai from previous steps
 		else if (algorithm.equals("sampe")){
 			parameters.add(this.inputFile+".sai");
-			parameters.add(this.inputFile2+".sai");	
+			parameters.add(this.inputFile2+".sai");
 			parameters.add(this.inputFile);
 			parameters.add(this.inputFile2);
 		}
-		
+
 		//If "samse", only one .sai file
 		else if (algorithm.equals("samse")){
 			parameters.add(this.inputFile+".sai");
 			parameters.add(this.inputFile);
 		}
-		
-		
+
 		//Initialization of the array with the previous parameters
 		parametersArray = new String[parameters.size()];
-		
+
 		for(int i = 0; i< parameters.size(); i++){
 			parametersArray[i] = parameters.get(i);
-			
 		}
-		
-		//Call to JNI with the selected parameters
-		BwaJni.Bwa_Jni(parametersArray);
-		
-		return parametersArray;
-		
-	}
 
-	
+		// Call to JNI with the selected parameters
+		int returnCode = BwaJni.Bwa_Jni(parametersArray);
+
+		if (returnCode != 0) {
+		    LOG.error("BWA:: BWA exited with error code: " + String.valueOf(returnCode));
+		    return returnCode;
+        }
+
+		// The run was successful
+		return 0;
+	}
 }
