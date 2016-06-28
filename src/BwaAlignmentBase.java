@@ -60,8 +60,7 @@ public abstract class BwaAlignmentBase implements Serializable {
 
         this.appId 			= context.applicationId();
         this.appName 		= context.appName();
-        //this.tmpDir			= context.getLocalProperty("spark.local.dir");
-        this.tmpDir			= "/data/1/spark";
+        this.tmpDir			= context.getLocalProperty("spark.local.dir");
         this.bwaInterpreter = bwaInterpreter;
 
         //We set the tmp dir
