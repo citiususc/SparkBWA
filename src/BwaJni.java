@@ -28,7 +28,7 @@ public class BwaJni {
 	private native int bwa_jni(int argc, String[] argv, int[] lenStrings);
 	
 	//Static function to call the native method from Java
-	public static void Bwa_Jni(String[] args) {
+	public static int Bwa_Jni(String[] args) {
 		
 		int[] lenStrings = new int[args.length];
 		
@@ -38,7 +38,8 @@ public class BwaJni {
 			lenStrings[i] = argumento.length();
 		}
 		
-		new BwaJni().bwa_jni(args.length, args, lenStrings);
+		int returnCode = new BwaJni().bwa_jni(args.length, args, lenStrings);
+		return returnCode;
 	}
 	static {
 		System.loadLibrary("bwa");

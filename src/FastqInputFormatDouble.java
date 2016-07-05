@@ -36,12 +36,4 @@ public class FastqInputFormatDouble extends FileInputFormat<Long,String> {
 		return new FastqRecordReaderDouble();
 
 	}
-	
-/*
-	@Override
-	public boolean isSplitable(JobContext context, Path file) {
-		return false;
-	} 
-	*/
-
 }

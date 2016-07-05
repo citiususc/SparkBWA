@@ -4,8 +4,9 @@
 
 * **BWA-MEM**
 * **BWA-backtrack**
+* **BWASW**
 
-All of them work with paired-end reads.
+All of them work with single-reads and paired-end reads.
 
 If you use **SparkBWA**, please cite this article:
 
@@ -64,8 +65,7 @@ In this way, Spark executors are able to find the BWA library (first line). The 
 Here it is an example of how to execute **SparkBWA** using the BWA-MEM algorithm with paired-end reads. The example assumes that our index is stored in all the cluster nodes at */Data/HumanBase/* . The index can be obtained from BWA using "bwa index".
 
 First, we get the input FASTQ reads from the [1000 Genomes Project][3] ftp:
-
-	wget ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/phase3/data/NA12750/sequence_read/ERR000589_1.filt.fastq.gz
+wget ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/phase3/data/NA12750/sequence_read/ERR000589_1.filt.fastq.gz
 	wget ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/phase3/data/NA12750/sequence_read/ERR000589_2.filt.fastq.gz
 	
 Next, the downloaded files should be uncompressed:
@@ -85,6 +85,8 @@ Finally, we can execute **SparkBWA** on the cluster. Again, we assume that Spark
 Options:
 * **-algorithm mem** - Sequence alignment algorithm (mem - *BWA-MEM*, aln - *BWA-backtrack*).
 * **-reads paired** - Use single or paired-end reads.
+* **-bwaArgs** - Can be used to pass arguments directly to BWA (ex. "-t 4" to
+  specify the amount of threads to use per instance of BWA).
 * **-index** - Index prefix is specified. The index must be available in all the cluster nodes at the same location.
 * The last three arguments are the input and output HDFS files.
 
@@ -100,7 +102,25 @@ In case of not using a reducer, the output will be split into several pieces (fi
 
 	hdfs dfs -copyToLocal Output_ERR000589/* ./
 	python src/utils/FullSam.py ./ ./OutputFile.sam
-	
+
+## Accuracy
+SparkBWA should be as accurate as running BWA normally. Below are GCAT
+alignment benchmarks which proves this.
+
+**mem**
+* [Single-reads (400 bp)](http://www.bioplanet.com/gcat/reports/7771-ilmcxyuzdb/alignment/400bp-se-large-indel/sparkbwa-mem)
+* [Pair-ended reads (100 bp)](http://www.bioplanet.com/gcat/reports/7770-ecfkcezhcs/alignment/100bp-pe-small-indel/sparkbwa-mem/compare-23-18)
+* [Pair-ended reads (150 bp)](http://www.bioplanet.com/gcat/reports/7782-dhjurqbogc/alignment/150bp-pe-large-indel/sparkbwa-mem/compare-67-79)
+
+**aln**
+* [Single-reads (100 bp)](http://www.bioplanet.com/gcat/reports/7783-mzrshfceqp/alignment/100bp-se-small-indel/sparkbwa-samse/compare-26-35)
+* [Pair-ended reads (250 bp)](http://www.bioplanet.com/gcat/reports/7784-rxjsfbmmmj/alignment/250bp-pe-large-indel/sparkbwa-sampe/compare-69-81)
+
+**bwasw**
+* [Single-reads (400 bp)](http://www.bioplanet.com/gcat/reports/7785-gdbodiqrmn/alignment/400bp-se-large-indel/sparkbwa-bwasw/compare-49-61)
+* [Pair-ended reads (250 bp)](http://www.bioplanet.com/gcat/reports/7786-hteifmsqpm/alignment/250bp-pe-small-indel/sparkbwa-bwasw/compare-68-80)
+
+
 ##Frequently asked questions (FAQs)
 
 1. [I can not build the tool because *jni_md.h* or *jni.h* is missing.](#building1)

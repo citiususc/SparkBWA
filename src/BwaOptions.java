@@ -44,8 +44,7 @@ public class BwaOptions {
 	private boolean alnAlgorithm 		= false;	/**< The option to use the ALN algorithm */
 	private boolean bwaswAlgorithm 		= false;	/**< The option to use the BWASW algorithm */
 
-	//private boolean memThread 		= false;
-	private String numThreads 			= "0";		/**< The number of threads to use with the threaded version */
+	private String bwaArgs  			= "";		/**< The arguments passed directly to BWA */
 
 	//Paired or single reads
 	private boolean pairedReads 		= true;		/**< The option to use paired reads */
@@ -109,7 +108,7 @@ public class BwaOptions {
 	 * @param args The arguments that the user is going to provide from the Linux console
 	 */
 	public BwaOptions(String [] args){
-		
+
 		//Parse arguments
 		for(String argumento: args){
 			LOG.info("JMAbuin:: Received argument: "+argumento);
@@ -127,13 +126,8 @@ public class BwaOptions {
 		CommandLineParser parser = new BasicParser();
 		CommandLine cmd;
 		try {
-			cmd = parser.parse( options, args);
+			cmd = parser.parse(options, args);
 
-
-			//Number of threads per map task
-			if(cmd.hasOption("threads")){
-				numThreads = cmd.getOptionValue("threads");
-			}
 
 			//We look for the algorithm
 			if (cmd.hasOption("algorithm")) {
@@ -184,6 +178,10 @@ public class BwaOptions {
 			//Partition number
 			if(cmd.hasOption("partitions")){
 				partitionNumber = Integer.parseInt(cmd.getOptionValue("partitions"));
+			}
+
+			if(cmd.hasOption("bwaArgs")){
+				bwaArgs = cmd.getOptionValue("bwaArgs");
 			}
 
 			//We look if we want the paired or single algorithm
@@ -279,17 +277,16 @@ public class BwaOptions {
 
 		options.addOption(algorithm);
 
-		//Number of threads
-		Option threads = new Option("threads",true,"Number of threads used per map - setNumThreads(string)");
-		threads.setArgName("Threads number");
-
-		options.addOption(threads);
-
 		//Paired or single reads
 		Option reads = new Option("reads",true,"Type of reads to use during alignment");
 		reads.setArgName("paired|single");
 
 		options.addOption(reads);
+
+		// Options to BWA
+		Option bwaArgs = new Option("bwaArgs", true, "Arguments passed directly to BWA");
+		bwaArgs.setArgName("\"BWA arguments\"");
+		options.addOption(bwaArgs);
 
 		//Reducer option
 		Option reducer = new Option("r",false,"Enables the reducer phase - setUseReducer(boolean)");
@@ -317,6 +314,14 @@ public class BwaOptions {
 
 
 		return options;
+	}
+
+	public String getBwaArgs() {
+		return bwaArgs;
+	}
+
+	public void setBwaArgs(String bwaArgs) {
+	    this.bwaArgs = bwaArgs;
 	}
 
 	/**
@@ -413,22 +418,6 @@ public class BwaOptions {
 			this.setAlnAlgorithm(false);
 			this.setMemAlgorithm(false);
 		}
-	}
-
-	/**
-	 * Getter for the number of threads to use with the threaded version of BWA
-	 * @return The number of threads to use. If it is 0, it is sequential
-	 */
-	public String getNumThreads() {
-		return numThreads;
-	}
-
-	/**
-	 * Setter for the number of threads to use in the threaded version of BWA
-	 * @param numThreads Integer that represents the number of threads to use
-	 */
-	public void setNumThreads(String numThreads) {
-		this.numThreads = numThreads;
 	}
 
 	/**

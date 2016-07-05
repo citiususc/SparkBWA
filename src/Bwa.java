@@ -19,6 +19,8 @@
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * Class that communicates with BWA
@@ -29,44 +31,31 @@ import java.util.ArrayList;
 public class Bwa implements Serializable {
 
 	private static final long serialVersionUID = 1L;	/**< The version ID */
-
+	private static final Log LOG = LogFactory.getLog(Bwa.class);
 
 	//Option to use the reduce phase
-	private boolean useReducer 		= false;			/**< The option to use the reduce phase */
-
+	private boolean useReducer 				= false;			/**< The option to use the reduce phase */
 
 	//Algorithms boolean variables
-	private boolean memAlgorithm 	= false;			/**< The option to use the MEM algorithm */
-	private boolean alnAlgorithm 	= false;			/**< The option to use the ALN algorithm */
-	private boolean bwaswAlgorithm 	= false;			/**< The option to use the BWASW algorithm */
+	private boolean memAlgorithm 			= false;			/**< The option to use the MEM algorithm */
+	private boolean alnAlgorithm 			= false;			/**< The option to use the ALN algorithm */
+	private boolean bwaswAlgorithm 			= false;			/**< The option to use the BWASW algorithm */
 
-	private boolean memThread 		= false;			/**< The option to use the threaded version */
-	private String numThreads 		= "0";				/**< The number of threads to use with the threaded version */
+	private String bwaArgs  				= "";				/**< The args passed directly to bwa */
 
 	//Paired or single reads
-	private boolean pairedReads 	= false;			/**< The option to use paired reads */
-	private boolean singleReads 	= false;			/**< The option to use single reads */
+	private boolean pairedReads 			= false;			/**< The option to use paired reads */
+	private boolean singleReads 			= false;			/**< The option to use single reads */
 
 	//Index path
-	private String indexPath 		= "";				/**< The index path */
-	
-	private String inputFile 		= "";				/**< The first of the FASTQ files */
-	private String inputFile2 		= "";				/**< The second of the FASTQ files */
-	private String outputFile 		= "";				/**< The output SAM file */
-	
-	private String outputHdfsDir	= "";				/**< The HDFS directory where the output files are going to be stored */
-	
-	
-	
-	/**
-	 * Constructor without options
-	 * @author José M. Abuín
-	 * @brief This constructor can be used when BWA still does not have any option
-	 */
-	public Bwa(){
-		
-	}
-	
+	private String indexPath 				= "";				/**< The index path */
+
+	private String inputFile 				= "";				/**< The first of the FASTQ files */
+	private String inputFile2 				= "";				/**< The second of the FASTQ files */
+	private String outputFile 				= "";				/**< The output SAM file */
+
+	private String outputHdfsDir			= "";				/**< The HDFS directory where the output files are going to be stored */
+
 	/**
 	 * @author José M. Abuín
 	 * @brief This constructor is used when the BWA options are already set
@@ -74,28 +63,25 @@ public class Bwa implements Serializable {
 	 * @param memAlgorithm		The option to use the MEM algorithm
 	 * @param alnAlgorithm		The option to use the ALN algorithm
 	 * @param bwaswAlgorithm	The option to use the BWASW algorithm
-	 * @param numThreads		The number of threads to use in the BWA threaded version
 	 * @param pairedReads		Use single reads
 	 * @param singleReads		Use paired reads
 	 * @param indexPath			The index path
 	 */
-	public Bwa(boolean useReducer,boolean memAlgorithm, boolean alnAlgorithm, boolean bwaswAlgorithm, String numThreads, boolean pairedReads, boolean singleReads, String indexPath){
-		
-		//The object parameters are configured according the options passed as arguments
-		this.useReducer 		= useReducer;
-		
-		this.memAlgorithm 		= memAlgorithm;
-		this.alnAlgorithm 		= alnAlgorithm;
-		this.bwaswAlgorithm 	= bwaswAlgorithm;
-		
-		this.numThreads 		= numThreads;
-		
-		this.pairedReads 		= pairedReads;
-		this.singleReads 		= singleReads;
-		
-		this.indexPath 			= indexPath;
-		
+	public Bwa(BwaOptions options) {
+		// The object parameters are configured according the options passed as arguments
+		this.useReducer 		= options.isUseReducer();
 
+		this.memAlgorithm 		= options.isMemAlgorithm();
+		this.alnAlgorithm 		= options.isAlnAlgorithm();
+		this.bwaswAlgorithm 	= options.isBwaswAlgorithm();
+
+		this.bwaArgs 			= options.getBwaArgs();
+
+		this.pairedReads 		= options.isPairedReads();
+		this.singleReads 		= options.isSingleReads();
+
+		this.indexPath 			= options.getIndexPath();
+		this.outputHdfsDir 		= options.getOutputPath();
 	}
 
 	/**
@@ -169,7 +155,7 @@ public class Bwa implements Serializable {
 	public boolean isMemAlgorithm() {
 		return memAlgorithm;
 	}
-	
+
 	/**
 	 * Setter for the option of using the mem algorithm or not
 	 * @param memAlgorithm A boolean value that is true if the mem algorithm is going to be used or false otherwise
@@ -208,38 +194,6 @@ public class Bwa implements Serializable {
 	 */
 	public void setBwaswAlgorithm(boolean bwaswAlgorithm) {
 		this.bwaswAlgorithm = bwaswAlgorithm;
-	}
-
-	/**
-	 * Getter for the option of using the BWA threaded version or not
-	 * @return A boolean value that is true if the threaded version of BWA is going to be used or false otherwise
-	 */
-	public boolean isMemThread() {
-		return memThread;
-	}
-
-	/**
-	 * Setter for the option of using the BWA threaded version or not
-	 * @param memThread A boolean value that is true if the thread version is going to be used or false otherwise
-	 */
-	public void setMemThread(boolean memThread) {
-		this.memThread = memThread;
-	}
-
-	/**
-	 * Getter for the number of threads to use with the threaded version
-	 * @return The number of threads to use in the BWA threaded version
-	 */
-	public String getNumThreads() {
-		return numThreads;
-	}
-
-	/**
-	 * Setter for the number of threads to use with the threaded version
-	 * @param numThreads The number of threads to use in the BWA threaded version
-	 */
-	public void setNumThreads(String numThreads) {
-		this.numThreads = numThreads;
 	}
 
 	/**
@@ -305,36 +259,26 @@ public class Bwa implements Serializable {
 	public void setOutputHdfsDir(String outputHdfsDir) {
 		this.outputHdfsDir = outputHdfsDir;
 	}
-	
-	/**
-	 * This Function is responsible for creating the options that are going to be passed to BWA
-	 * @param alnStep An integer that indicates at with phase of the aln step the program is
-	 * @return A Strings array containing the options which BWA was launched
-	 */
-	public String[] run(int alnStep){
-		
-		String[] parametersArray;
-		
+
+	private String[] parseParameters(int alnStep) {
 		ArrayList<String> parameters = new ArrayList<String>();
-		
+
 		//The first parameter is always "bwa"======================================================
 		parameters.add("bwa");
-		
-		
+
 		//The second parameter is the algorithm election===========================================
 		String algorithm = "";
-		
+
 		//Case of "mem" algorithm
 		if(this.memAlgorithm && !this.alnAlgorithm && !this.bwaswAlgorithm){
 			algorithm = "mem";
 		}
 		//Case of "aln" algorithm
 		else if(!this.memAlgorithm && this.alnAlgorithm && !this.bwaswAlgorithm){
-			
 			//Aln algorithm and paired reads
 			if (this.pairedReads) {
 				//In the two first steps, the aln option is used
-				if ((alnStep == 0) || (alnStep == 1)){
+				if (alnStep < 2){
 					algorithm = "aln";
 				}
 				//In the third one, the "sampe" has to be performed
@@ -353,98 +297,95 @@ public class Bwa implements Serializable {
 					algorithm = "samse";
 				}
 			}
-			
+
 		}
 		//The last case is the "bwasw"
 		else if(!this.memAlgorithm && !this.alnAlgorithm && this.bwaswAlgorithm){
 			algorithm = "bwasw";
 		}
-		
+
 		parameters.add(algorithm);
-		
-		//The third parameter is the output file===================================================
-		
-		parameters.add("-f");
-		
-		//If the algorithm is "mem", "sampe" or "samse", the output is a .sam file
-		if(algorithm.equals("mem") || algorithm.equals("sampe") || algorithm.equals("samse")){
-			parameters.add(this.outputFile);
+
+		if (!this.bwaArgs.isEmpty()) {
+			parameters.add(this.bwaArgs);
 		}
-		//If is "aln", the output is a .sai file
-		else if(algorithm.equals("aln")){
-			if(alnStep == 0){
+
+		//The third parameter is the output file===================================================
+		parameters.add("-f");
+
+		if (algorithm.equals("aln")){
+			if (alnStep == 0){
 				parameters.add(this.inputFile+".sai");
 			}
-			else if(alnStep == 1 && this.pairedReads){
+			else if (alnStep == 1 && this.pairedReads){
 				parameters.add(this.inputFile2+".sai");
 			}
 		}
-		
-				
-		//The fourth parameter, in case of use it, is the thread number============================
-		//if(this.memThread){
-		if(!this.numThreads.equals("0")){
-			parameters.add("-t");
-			parameters.add(this.numThreads);
+		else {
+			// For all other algorithms the output is a SAM file.
+			parameters.add(this.outputFile);
 		}
-		
-		//The fifth, the index path================================================================
-		
+
+		//The fifth, the index path===============================================================
 		parameters.add(this.indexPath);
-		
+
 		//The sixth, the input files===============================================================
-		
+
 		//If the "mem" algorithm, we add the FASTQ files
-		if(algorithm.compareTo("mem")==0){
+		if (algorithm.equals("mem") || algorithm.equals("bwasw")){
 			parameters.add(this.inputFile);
-			
-			if(this.pairedReads){
+
+			if (this.pairedReads){
 				parameters.add(this.inputFile2);
 			}
-			
-			
 		}
-		
+
 		//If "aln" aln step is 0 or 1, also FASTQ files
-		else if(algorithm.compareTo("aln")==0){
+		else if(algorithm.equals("aln")){
 			if(alnStep == 0){
 				parameters.add(this.inputFile);
 			}
 			else if(alnStep == 1 && this.pairedReads){
-				parameters.add(this.inputFile2);	
+				parameters.add(this.inputFile2);
 			}
-			
 		}
-		
+
 		//If "sampe" the input files are the .sai from previous steps
 		else if (algorithm.equals("sampe")){
 			parameters.add(this.inputFile+".sai");
-			parameters.add(this.inputFile2+".sai");	
+			parameters.add(this.inputFile2+".sai");
 			parameters.add(this.inputFile);
 			parameters.add(this.inputFile2);
 		}
-		
+
 		//If "samse", only one .sai file
 		else if (algorithm.equals("samse")){
 			parameters.add(this.inputFile+".sai");
 			parameters.add(this.inputFile);
 		}
-		
-		
-		//Initialization of the array with the previous parameters
-		parametersArray = new String[parameters.size()];
-		
-		for(int i = 0; i< parameters.size(); i++){
-			parametersArray[i] = parameters.get(i);
-			
-		}
-		
-		//Call to JNI with the selected parameters
-		BwaJni.Bwa_Jni(parametersArray);
-		
-		return parametersArray;
-		
-	}
 
-	
+		String[] parametersArray = new String[parameters.size()];
+		return parameters.toArray(parametersArray);
+    }
+
+	/**
+	 * This Function is responsible for creating the options that are going to be passed to BWA
+	 * @param alnStep An integer that indicates at with phase of the aln step the program is
+	 * @return A Strings array containing the options which BWA was launched
+	 */
+	public int run(int alnStep) {
+		// Get obtain the list of arguments passed by the user
+		String[] parametersArray = parseParameters(alnStep);
+
+		// Call to JNI with the selected parameters
+		int returnCode = BwaJni.Bwa_Jni(parametersArray);
+
+		if (returnCode != 0) {
+			LOG.error("BWA:: BWA exited with error code: " + String.valueOf(returnCode));
+			return returnCode;
+		}
+
+		// The run was successful
+		return 0;
+	}
 }
