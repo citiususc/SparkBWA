@@ -124,11 +124,11 @@ alignment benchmarks which proves this.
 ##Frequently asked questions (FAQs)
 
 1. [I can not build the tool because *jni_md.h* or *jni.h* is missing.](#building1)
+2. [SparkBWA fails with message *java.lang.UnsatisfiedLinkError: no bwa in java.library.path*.](#librarypatherror)
 
 ####<a name="building1"></a>1. I can not build the tool because *jni_md.h* or *jni.h* is missing.
 You need to set correctly your *JAVA_HOME* environment variable or you can set it in Makefile.common.
 
-2. [SparkBWA fails with message *java.lang.UnsatisfiedLinkError: no bwa in java.library.path*.](#librarypatherror)
 ####<a name="librarypatherror"></a>2. SparkBWA fails with message *java.lang.UnsatisfiedLinkError: no bwa in java.library.path*.
 SparkBWA uses the Hadoop distributed cache to store the shared library that gives access to bwa from Spark, *libbwa.so*. This library is passed to each executor with the *--archives* option used when launching Spark. The argument to this option is the file *bwa.zip*. By default, this zip file is uncompressed in each executor working directory under the path *working_directory/bwa.zip/libbwa.so*. So, because of that, the option in spark-defaults.conf must be **always**:
 
