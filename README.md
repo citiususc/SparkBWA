@@ -17,7 +17,7 @@ A version for Hadoop is available [here](https://github.com/citiususc/BigBWA).
 # Structure #
 In this GitHub repository you can find the following directories:
 
-* bwa - This folder contains the BWA software package required to build **SparkBWA**. Currently it includes versions 0.5.10-mt and 0.7.12, but **SparkBWA** is able to work with old or later versions of BWA.
+* bwa - This folder contains the BWA software package required to build **SparkBWA**. Currently it includes versions 0.5.10-mt, 0.7.12 and 0.7.15, but **SparkBWA** is able to work with old or later versions of BWA.
 * libs - It contains the Spark libraries needed to build **SparkBWA**. By default, libraries are downloaded at compilation time.
 * src - **SparkBWA** source code.
 
