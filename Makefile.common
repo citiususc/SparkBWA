@@ -28,7 +28,7 @@ JAR_FILES = $(LIBS_DIR)/commons-cli-1.2.jar:$(LIBS_DIR)/spark-assembly-1.6.1-had
 
 # Bwa variables ########
 BWA_DIR = ./bwa
-BWA = bwa-0.7.12
+BWA = bwa-0.7.15
 SPARKBWA_FLAGS = -c -g -Wall -Wno-unused-function -O2 -fPIC -DHAVE_PTHREAD -DUSE_MALLOC_WRAPPERS $(JAVA_HOME_INCLUDES)
 LIBBWA_FLAGS = -shared -o
 LIBBWA_LIBS = -lrt 
