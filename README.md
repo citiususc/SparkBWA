@@ -4,7 +4,7 @@
 
 * **BWA-MEM**
 * **BWA-backtrack**
-* **BWASW**
+* **BWA-SW**
 
 All of them work with single-reads and paired-end reads.
 
@@ -17,7 +17,7 @@ A version for Hadoop is available [here](https://github.com/citiususc/BigBWA).
 # Structure #
 In this GitHub repository you can find the following directories:
 
-* bwa - This folder contains the BWA software package required to build **SparkBWA**. Currently it includes versions 0.5.10-mt and 0.7.12, but **SparkBWA** is able to work with old or later versions of BWA.
+* bwa - This folder contains the BWA software package required to build **SparkBWA**. Currently it includes versions 0.5.10-mt, 0.7.12 and 0.7.15, but **SparkBWA** is able to work with old or later versions of BWA.
 * libs - It contains the Spark libraries needed to build **SparkBWA**. By default, libraries are downloaded at compilation time.
 * src - **SparkBWA** source code.
 
@@ -26,7 +26,7 @@ In this GitHub repository you can find the following directories:
 ## Requirements
 Requirements to build **SparkBWA** are the same than the ones to build BWA, with the only exception that the *JAVA_HOME* environment variable should be defined. If not, you can define it in the *Makefile.common* file. 
 
-It is also needed to include the flag *-fPIC* in the *Makefile* of the considered BWA version. To do this, the user just need to add this option to the end of the *CFLAGS* variable in the BWA Makefile. Considering bwa-0.7.12, the original Makefile contains:
+It is also needed to include the flag *-fPIC* in the *Makefile* of the considered BWA version. To do this, the user just need to add this option to the end of the *CFLAGS* variable in the BWA Makefile. Considering bwa-0.7.15, the original Makefile contains:
 
 	CFLAGS=		-g -Wall -Wno-unused-function -O2
 
@@ -57,15 +57,16 @@ The next two lines must be included in the file:
 	spark.executor.extraJavaOptions		-Djava.library.path=./bwa.zip
 	spark.yarn.executor.memoryOverhead	8704
 	
-In this way, Spark executors are able to find the BWA library (first line). The second line sets the amount of off-heap memory (in megabytes) to be allocated per YARN container. 
+In this way, Spark executors are able to find the BWA library (first line). The second line sets the amount of off-heap memory (in megabytes) to be allocated per YARN container.
 
 ## Running SparkBWA ##
-**SparkBWA** requires a working Hadoop cluster. Users should take into account that at least 10 GB of memory per map are required (each map loads into memory the bwa index - refrence genome). Note that **SparkBWA** uses disk space in the */tmp* directory.
+**SparkBWA** requires a working Hadoop cluster. Users should take into account that at least 10 GB of memory per map/YARN container are required (each map loads into memory the bwa index - refrence genome). Also, note that **SparkBWA** uses disk space in the */tmp* directory.
 
 Here it is an example of how to execute **SparkBWA** using the BWA-MEM algorithm with paired-end reads. The example assumes that our index is stored in all the cluster nodes at */Data/HumanBase/* . The index can be obtained from BWA using "bwa index".
 
 First, we get the input FASTQ reads from the [1000 Genomes Project][3] ftp:
-wget ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/phase3/data/NA12750/sequence_read/ERR000589_1.filt.fastq.gz
+
+	wget ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/phase3/data/NA12750/sequence_read/ERR000589_1.filt.fastq.gz
 	wget ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/phase3/data/NA12750/sequence_read/ERR000589_2.filt.fastq.gz
 	
 Next, the downloaded files should be uncompressed:
@@ -107,16 +108,16 @@ In case of not using a reducer, the output will be split into several pieces (fi
 SparkBWA should be as accurate as running BWA normally. Below are GCAT
 alignment benchmarks which proves this.
 
-**mem**
+**MEM**
 * [Single-reads (400 bp)](http://www.bioplanet.com/gcat/reports/7771-ilmcxyuzdb/alignment/400bp-se-large-indel/sparkbwa-mem)
 * [Pair-ended reads (100 bp)](http://www.bioplanet.com/gcat/reports/7770-ecfkcezhcs/alignment/100bp-pe-small-indel/sparkbwa-mem/compare-23-18)
 * [Pair-ended reads (150 bp)](http://www.bioplanet.com/gcat/reports/7782-dhjurqbogc/alignment/150bp-pe-large-indel/sparkbwa-mem/compare-67-79)
 
-**aln**
+**BWA-backtrack**
 * [Single-reads (100 bp)](http://www.bioplanet.com/gcat/reports/7783-mzrshfceqp/alignment/100bp-se-small-indel/sparkbwa-samse/compare-26-35)
 * [Pair-ended reads (250 bp)](http://www.bioplanet.com/gcat/reports/7784-rxjsfbmmmj/alignment/250bp-pe-large-indel/sparkbwa-sampe/compare-69-81)
 
-**bwasw**
+**BWA-SW**
 * [Single-reads (400 bp)](http://www.bioplanet.com/gcat/reports/7785-gdbodiqrmn/alignment/400bp-se-large-indel/sparkbwa-bwasw/compare-49-61)
 * [Pair-ended reads (250 bp)](http://www.bioplanet.com/gcat/reports/7786-hteifmsqpm/alignment/250bp-pe-small-indel/sparkbwa-bwasw/compare-68-80)
 
@@ -124,9 +125,17 @@ alignment benchmarks which proves this.
 ##Frequently asked questions (FAQs)
 
 1. [I can not build the tool because *jni_md.h* or *jni.h* is missing.](#building1)
+2. [SparkBWA fails with message *java.lang.UnsatisfiedLinkError: no bwa in java.library.path*.](#librarypatherror)
 
 ####<a name="building1"></a>1. I can not build the tool because *jni_md.h* or *jni.h* is missing.
 You need to set correctly your *JAVA_HOME* environment variable or you can set it in Makefile.common.
+
+####<a name="librarypatherror"></a>2. SparkBWA fails with message *java.lang.UnsatisfiedLinkError: no bwa in java.library.path*.
+SparkBWA uses the Hadoop distributed cache to store the shared library that gives access to bwa from Spark, *libbwa.so*. This library is passed to each executor with the *--archives* option used when launching Spark. The argument to this option is the file *bwa.zip*. By default, this zip file is uncompressed in each executor working directory under the path *working_directory/bwa.zip/libbwa.so*. So, because of that, the option in spark-defaults.conf must be **always**:
+
+	spark.executor.extraJavaOptions		-Djava.library.path=./bwa.zip
+
+With this, we are indicating that the executor must search in the current working directory inside the ./bwa.sip/ directory for any library. If the user sets this option to the zip file created when building SparkBWA, the execution is going to fail.
 
 [1]: https://github.com/lh3/bwa
 [2]: https://hadoop.apache.org/
