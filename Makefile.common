@@ -31,5 +31,5 @@ BWA_DIR = ./bwa
 BWA = bwa-0.7.15
 SPARKBWA_FLAGS = -c -g -Wall -Wno-unused-function -O2 -fPIC -DHAVE_PTHREAD -DUSE_MALLOC_WRAPPERS $(JAVA_HOME_INCLUDES)
 LIBBWA_FLAGS = -shared -o
-LIBBWA_LIBS = -lrt 
+LIBBWA_LIBS = -lrt -lz
 
