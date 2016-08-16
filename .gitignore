@@ -1,0 +1,7 @@
+jni/build
+target
+*.sw*
+*.class
+.idea
+sparkbwa.iml
+sparkbwa_out
