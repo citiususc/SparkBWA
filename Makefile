@@ -48,6 +48,7 @@ libbwa.so: sparkbwa bwa
 
 sparkbwa_java: libbwa.so
 	mvn clean package
+	if [ ! -d "$(OUTPUT_DIR)" ]; then mkdir $(OUTPUT_DIR); fi
 	cp target/*.jar $(OUTPUT_DIR)
 	cp $(BUILD_DIR)/*.o $(OUTPUT_DIR)
 	cp $(BUILD_DIR)/*.so $(OUTPUT_DIR)
@@ -55,4 +56,5 @@ sparkbwa_java: libbwa.so
 clean:
 	$(RM) $(BUILD_DIR)/*
 	$(RMRF) target
+	$(RMRF) $(OUTPUT_DIR)
 	$(MAKE) clean -C $(BWA_DIR)/$(BWA)
