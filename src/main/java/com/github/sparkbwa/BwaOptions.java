@@ -28,7 +28,6 @@ import org.apache.commons.logging.LogFactory;
 public class BwaOptions {
 
   private static final Log LOG = LogFactory.getLog(BwaOptions.class);
-  private boolean useReducer = false;
 
   private boolean memAlgorithm = true;
   private boolean alnAlgorithm = false;
@@ -155,13 +154,6 @@ public class BwaOptions {
         }
       }
 
-      //We look if the user wants to use a reducer or not
-      if (cmd.hasOption("r")) {
-        useReducer = true;
-      } else {
-        useReducer = false;
-      }
-
       //Sorting input reads
       if (cmd.hasOption("sorting")) {
         if (cmd.getOptionValue("sorting").equals("hdfs")) {
@@ -233,10 +225,6 @@ public class BwaOptions {
     bwaArgs.setArgName("\"BWA arguments\"");
     options.addOption(bwaArgs);
 
-    //Reducer option
-    Option reducer = new Option("r", false, "Enables the reducer phase - setUseReducer(boolean)");
-    options.addOption(reducer);
-
     //Index
     Option index =
         new Option(
@@ -288,25 +276,6 @@ public class BwaOptions {
    */
   public void setOutputHdfsDir(String outputHdfsDir) {
     this.outputHdfsDir = outputHdfsDir;
-  }
-
-  /**
-   * Getter to know if a reducer is going to be used or not
-   *
-   * @return A boolean value that is true if a reducer is used or not
-   */
-  public boolean isUseReducer() {
-    return useReducer;
-  }
-
-  /**
-   * Setter for the option of using a reducer
-   *
-   * @param useReducer A boolean value that is true ir a reducer is going to be used or false
-   *     otherwise
-   */
-  public void setUseReducer(boolean useReducer) {
-    this.useReducer = useReducer;
   }
 
   /**

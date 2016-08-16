@@ -20,7 +20,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.ContentSummary;
-import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
@@ -34,9 +33,7 @@ import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.storage.StorageLevel;
 import scala.Tuple2;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.List;
 
 /**
@@ -310,44 +307,6 @@ public class BwaInterpreter {
         .collect();
   }
 
-  private void combineOutputSamFiles(String outputHdfsDir, List<String> returnedValues) {
-    try {
-      Configuration conf = new Configuration();
-      FileSystem fs = FileSystem.get(conf);
-
-      Path finalHdfsOutputFile = new Path(outputHdfsDir + "/FullOutput.sam");
-      FSDataOutputStream outputFinalStream = fs.create(finalHdfsOutputFile, true);
-
-      // We iterate over the resulting files in HDFS and agregate them into only one file.
-      for (int i = 0; i < returnedValues.size(); i++) {
-        LOG.info("JMAbuin:: SparkBWA :: Returned file ::" + returnedValues.get(i));
-        BufferedReader br =
-            new BufferedReader(new InputStreamReader(fs.open(new Path(returnedValues.get(i)))));
-
-        String line;
-        line = br.readLine();
-
-        while (line != null) {
-          if (i == 0 || !line.startsWith("@")) {
-            //outputFinalStream.writeBytes(line+"\n");
-            outputFinalStream.write((line + "\n").getBytes());
-          }
-
-          line = br.readLine();
-        }
-        br.close();
-
-        fs.delete(new Path(returnedValues.get(i)), true);
-      }
-
-      outputFinalStream.close();
-      fs.close();
-    } catch (IOException e) {
-      e.printStackTrace();
-      LOG.error(e.toString());
-    }
-  }
-
   /**
    * Runs BWA with the specified options
    *
@@ -370,28 +329,24 @@ public class BwaInterpreter {
     }
 
     // In the case of use a reducer the final output has to be stored in just one file
-    if (bwa.isUseReducer()) {
-      combineOutputSamFiles(bwa.getOutputHdfsDir(), returnedValues);
-    } else {
-      for (String outputFile : returnedValues) {
-        LOG.info("JMAbuin:: SparkBWA:: Returned file ::" + outputFile);
+    for (String outputFile : returnedValues) {
+      LOG.info("JMAbuin:: SparkBWA:: Returned file ::" + outputFile);
+
+      //After the execution, if the inputTmp exists, it should be deleted
+      try {
+        if ((this.inputTmpFileName != null) && (!this.inputTmpFileName.isEmpty())) {
+          FileSystem fs = FileSystem.get(this.conf);
+
+          fs.delete(new Path(this.inputTmpFileName), true);
+
+          fs.close();
+        }
+
+      } catch (IOException e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+        LOG.error(e.toString());
       }
-    }
-
-    //After the execution, if the inputTmp exists, it should be deleted
-    try {
-      if ((this.inputTmpFileName != null) && (!this.inputTmpFileName.isEmpty())) {
-        FileSystem fs = FileSystem.get(this.conf);
-
-        fs.delete(new Path(this.inputTmpFileName), true);
-
-        fs.close();
-      }
-
-    } catch (IOException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
-      LOG.error(e.toString());
     }
   }
 

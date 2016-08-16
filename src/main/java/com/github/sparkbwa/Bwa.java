@@ -56,7 +56,6 @@ public class Bwa implements Serializable {
   /**
    * @author José M. Abuín
    * @brief This constructor is used when the BWA options are already set
-   * @param useReducer The option o use or not a reducer
    * @param memAlgorithm The option to use the MEM algorithm
    * @param alnAlgorithm The option to use the ALN algorithm
    * @param bwaswAlgorithm The option to use the BWASW algorithm
@@ -65,9 +64,6 @@ public class Bwa implements Serializable {
    * @param indexPath The index path
    */
   public Bwa(BwaOptions options) {
-    // The object parameters are configured according the options passed as arguments
-    this.useReducer = options.isUseReducer();
-
     this.memAlgorithm = options.isMemAlgorithm();
     this.alnAlgorithm = options.isAlnAlgorithm();
     this.bwaswAlgorithm = options.isBwaswAlgorithm();
@@ -135,23 +131,6 @@ public class Bwa implements Serializable {
     this.outputFile = outputFile;
   }
 
-  /**
-   * Getter for the option of using a reducer
-   *
-   * @return A boolean value that is true if we want to use a reducer and false otherwise
-   */
-  public boolean isUseReducer() {
-    return useReducer;
-  }
-
-  /**
-   * Setter for the option of using a reducer
-   *
-   * @param useReducer A boolean value that is true if we want to use a reducer and false otherwise
-   */
-  public void setUseReducer(boolean useReducer) {
-    this.useReducer = useReducer;
-  }
 
   /**
    * Getter for the option of using the mem algorithm or not
