@@ -26,6 +26,8 @@ import org.apache.spark.SparkContext;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 
 public abstract class BwaAlignmentBase implements Serializable {
@@ -109,21 +111,29 @@ public abstract class BwaAlignmentBase implements Serializable {
     ArrayList<String> returnedValues = new ArrayList<String>();
     String outputDir = this.bwaInterpreter.getOutputHdfsDir();
 
-    Configuration conf = new Configuration();
+    this.LOG.info("JMAbuin:: " + this.appId + " - " + this.appName + " Copying files...");
     try {
-      FileSystem fs = FileSystem.get(conf);
+        if (outputDir.startsWith("hdfs")) {
+          Configuration conf = new Configuration();
+          FileSystem fs = FileSystem.get(conf);
 
-      fs.copyFromLocalFile(
-          new Path(this.bwaInterpreter.getOutputFile()),
-          new Path(outputDir + "/" + outputSamFileName));
+          fs.copyFromLocalFile(
+                  new Path(this.bwaInterpreter.getOutputFile()),
+                  new Path(outputDir + "/" + outputSamFileName)
+          );
+      } else {
+        File localSamOutput = new File(this.bwaInterpreter.getOutputFile());
+        Files.copy(Paths.get(localSamOutput.getPath()), Paths.get(outputDir, localSamOutput.getName()));
 
-      // Delete the old results file
-      File tmpSamFullFile = new File(this.bwaInterpreter.getOutputFile());
-      tmpSamFullFile.delete();
+      }
     } catch (IOException e) {
       e.printStackTrace();
       this.LOG.error(e.toString());
     }
+
+    // Delete the old results file
+    File tmpSamFullFile = new File(this.bwaInterpreter.getOutputFile());
+    tmpSamFullFile.delete();
 
     returnedValues.add(outputDir + "/" + outputSamFileName);
 
