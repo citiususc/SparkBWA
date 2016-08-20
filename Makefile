@@ -10,6 +10,7 @@ LOCATION = `pwd`
 SRC_DIR = jni
 BUILD_DIR = jni/build
 OUTPUT_DIR = sparkbwa_out
+RESOURCES_DIR = src/main/resources
 
 # JAVA variables ####### 
 ifndef JAVA_HOME 
@@ -20,7 +21,7 @@ JAVA_HOME_INCLUDES = -I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/linux
 endif
 
 # Bwa variables ########
-BWA_DIR = resources/
+BWA_DIR = lib/
 BWA = bwa-0.7.15
 SPARKBWA_FLAGS = -c -g -Wall -Wno-unused-function -O2 -fPIC -DHAVE_PTHREAD -DUSE_MALLOC_WRAPPERS $(JAVA_HOME_INCLUDES)
 LIBBWA_FLAGS = -shared -o
@@ -45,13 +46,12 @@ sparkbwa:
 
 libbwa.so: sparkbwa bwa
 	$(CC) $(LIBBWA_FLAGS) $(BUILD_DIR)/libbwa.so $(BUILD_DIR)/*.o $(LIBBWA_LIBS)
+	cp $(BUILD_DIR)/libbwa.so $(RESOURCES_DIR)
 
 sparkbwa_java: libbwa.so
 	mvn clean package
 	if [ ! -d "$(OUTPUT_DIR)" ]; then mkdir $(OUTPUT_DIR); fi
 	cp target/*.jar $(OUTPUT_DIR)
-	cp $(BUILD_DIR)/*.o $(OUTPUT_DIR)
-	cp $(BUILD_DIR)/*.so $(OUTPUT_DIR)
 
 clean:
 	$(RM) $(BUILD_DIR)/*
