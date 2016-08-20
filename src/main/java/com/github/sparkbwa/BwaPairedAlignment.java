@@ -32,7 +32,7 @@ import java.util.Iterator;
  * @return A RDD containing the resulting Sam files from the alignment.
  */
 public class BwaPairedAlignment extends BwaAlignmentBase
-    implements Function2<Integer, Iterator<Tuple2<Text, Text>>, Iterator<String>> {
+    implements Function2<Integer, Iterator<Tuple2<String, String>>, Iterator<String>> {
 
   public BwaPairedAlignment(SparkContext context, Bwa bwaInterpreter) {
     super(context, bwaInterpreter);
@@ -42,7 +42,7 @@ public class BwaPairedAlignment extends BwaAlignmentBase
    * Code to run in each one of the mappers. This is, the alignment with the corresponding entry
    * data The entry data has to be written into the local filesystem
    */
-  public Iterator<String> call(Integer arg0, Iterator<Tuple2<Text, Text>> arg1) throws Exception {
+  public Iterator<String> call(Integer arg0, Iterator<Tuple2<String, String>> arg1) throws Exception {
 
     // STEP 1: Input fastq reads tmp file creation
     LOG.info("JMAbuin:: Tmp dir: " + this.tmpDir);
@@ -71,15 +71,15 @@ public class BwaPairedAlignment extends BwaAlignmentBase
       bw1 = new BufferedWriter(new OutputStreamWriter(fos1));
       bw2 = new BufferedWriter(new OutputStreamWriter(fos2));
 
-      Tuple2<Text, Text> newFastqRead;
+      Tuple2<String, String> newFastqRead;
 
       while (arg1.hasNext()) {
         newFastqRead = arg1.next();
 
-        bw1.write(newFastqRead._1.toString());
+        bw1.write(newFastqRead._1);
         bw1.newLine();
 
-        bw2.write(newFastqRead._2.toString());
+        bw2.write(newFastqRead._2);
         bw2.newLine();
       }
 

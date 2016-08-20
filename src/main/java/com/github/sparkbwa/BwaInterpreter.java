@@ -22,8 +22,6 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.ContentSummary;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.LongWritable;
-import org.apache.hadoop.io.Text;
 import org.apache.spark.ContextCleaner;
 import org.apache.spark.SparkConf;
 import org.apache.spark.SparkContext;
@@ -140,21 +138,15 @@ public class BwaInterpreter {
     this.sparkConf.set("spark.executor.extraJavaOptions", "-Djava.library.path=./bwa.zip/");
   }
 
-  private JavaRDD<Text> handleSingleReadsSorting() {
-    JavaRDD<Text> readsRDD = null;
+  private JavaRDD<String> handleSingleReadsSorting() {
+    JavaRDD<String> readsRDD = null;
 
     long startTime = System.nanoTime();
 
     LOG.info("JMAbuin::Not sorting in HDFS. Timing: " + startTime);
 
     // Read the two FASTQ files from HDFS using the FastqInputFormat class
-    JavaPairRDD<LongWritable, Text> singleReadsKeyVal =
-        ctx.newAPIHadoopFile(
-            options.getInputPath(),
-            FastqInputFormat.class,
-            LongWritable.class,
-            Text.class,
-            this.conf);
+    JavaPairRDD<Long, String> singleReadsKeyVal = loadFastq(this.options.getInputPath());
 
     // Sort in memory with no partitioning
     if ((options.getPartitionNumber() == 0) && (options.isSortFastqReads())) {
@@ -209,29 +201,29 @@ public class BwaInterpreter {
     return readsRDD;
   }
 
-  private JavaRDD<Tuple2<Text, Text>> handlePairedReadsSorting() {
-    JavaRDD<Tuple2<Text, Text>> readsRDD = null;
+  private JavaPairRDD<Long, String> loadFastq(String pathToFastq) {
+    JavaRDD<String> fastqLines = this.ctx.textFile(pathToFastq);
+
+    // Determine which FASTQ record the line belongs to.k
+    JavaPairRDD<Long, String> fastqLinesByRecordNum = fastqLines.zipWithIndex()
+                                                                .mapValues(lineNum -> (long) Math.ceil(lineNum / 4))
+                                                                .mapToPair(Tuple2::swap);
+
+    // Group group the lines which belongs to the same record, and concatinate them into a record.
+    return fastqLinesByRecordNum.groupByKey().mapValues(new FastqRecordCreator());
+  }
+
+  private JavaRDD<Tuple2<String, String>> handlePairedReadsSorting() {
+    JavaRDD<Tuple2<String, String>> readsRDD = null;
 
     long startTime = System.nanoTime();
 
     LOG.info("JMAbuin::Not sorting in HDFS. Timing: " + startTime);
 
     // Read the two FASTQ files from HDFS using the FastqInputFormat class
-    JavaPairRDD<LongWritable, Text> datasetTmp1 =
-        ctx.newAPIHadoopFile(
-            options.getInputPath(),
-            FastqInputFormat.class,
-            LongWritable.class,
-            Text.class,
-            this.conf);
-    JavaPairRDD<LongWritable, Text> datasetTmp2 =
-        ctx.newAPIHadoopFile(
-            options.getInputPath2(),
-            FastqInputFormat.class,
-            LongWritable.class,
-            Text.class,
-            this.conf);
-    JavaPairRDD<LongWritable, Tuple2<Text, Text>> pairedReadsRDD = datasetTmp1.join(datasetTmp2);
+    JavaPairRDD<Long, String> datasetTmp1 = loadFastq(options.getInputPath());
+    JavaPairRDD<Long, String> datasetTmp2 = loadFastq(options.getInputPath2());
+    JavaPairRDD<Long, Tuple2<String, String>> pairedReadsRDD = datasetTmp1.join(datasetTmp2);
 
     datasetTmp1.unpersist();
     datasetTmp2.unpersist();
@@ -293,14 +285,14 @@ public class BwaInterpreter {
    *
    * @author José M. Abuín
    */
-  private List<String> MapPairedBwa(Bwa bwa, JavaRDD<Tuple2<Text, Text>> readsRDD) {
+  private List<String> MapPairedBwa(Bwa bwa, JavaRDD<Tuple2<String, String>> readsRDD) {
     // The mapPartitionsWithIndex is used over this RDD to perform the alignment. The resulting sam filenames are returned
     return readsRDD
         .mapPartitionsWithIndex(new BwaPairedAlignment(readsRDD.context(), bwa), true)
         .collect();
   }
 
-  private List<String> MapSingleBwa(Bwa bwa, JavaRDD<Text> readsRDD) {
+  private List<String> MapSingleBwa(Bwa bwa, JavaRDD<String> readsRDD) {
     // The mapPartitionsWithIndex is used over this RDD to perform the alignment. The resulting sam filenames are returned
     return readsRDD
         .mapPartitionsWithIndex(new BwaSingleAlignment(readsRDD.context(), bwa), true)
@@ -319,12 +311,10 @@ public class BwaInterpreter {
 
     List<String> returnedValues;
     if (bwa.isPairedReads()) {
-      JavaRDD<Tuple2<Text, Text>> readsRDD = handlePairedReadsSorting();
-      System.out.println(readsRDD.count());
+      JavaRDD<Tuple2<String, String>> readsRDD = handlePairedReadsSorting();
       returnedValues = MapPairedBwa(bwa, readsRDD);
     } else {
-      JavaRDD<Text> readsRDD = handleSingleReadsSorting();
-      System.out.println(readsRDD.count());
+      JavaRDD<String> readsRDD = handleSingleReadsSorting();
       returnedValues = MapSingleBwa(bwa, readsRDD);
     }
 
@@ -380,13 +370,6 @@ public class BwaInterpreter {
                       + options.getPartitionNumber()
                       + "-"
                       + sorting);
-      try {
-        sparkConf.registerKryoClasses(new Class<?>[] {Class.forName("org.apache.hadoop.io.Text")});
-      } catch (java.lang.ClassNotFoundException e) {
-        e.printStackTrace();
-        System.exit(1);
-      }
-
       //The ctx is created from scratch
       this.ctx = new JavaSparkContext(this.sparkConf);
 
