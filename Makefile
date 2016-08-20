@@ -46,6 +46,7 @@ sparkbwa:
 
 libbwa.so: sparkbwa bwa
 	$(CC) $(LIBBWA_FLAGS) $(BUILD_DIR)/libbwa.so $(BUILD_DIR)/*.o $(LIBBWA_LIBS)
+	if [ ! -d "$(RESOURCES_DIR)" ]; then mkdir $(RESOURCES_DIR); fi
 	cp $(BUILD_DIR)/libbwa.so $(RESOURCES_DIR)
 
 sparkbwa_java: libbwa.so
