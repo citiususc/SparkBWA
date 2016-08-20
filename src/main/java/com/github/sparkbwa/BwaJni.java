@@ -16,6 +16,10 @@
  */
 package com.github.sparkbwa;
 
+import cz.adamh.utils.NativeUtils;
+
+import java.io.IOException;
+
 /**
  * Class that calls BWA functions by means of JNI
  *
@@ -24,7 +28,11 @@ package com.github.sparkbwa;
 public class BwaJni {
 
   static {
-    System.loadLibrary("bwa");
+    try {
+      NativeUtils.loadLibraryFromJar("/libbwa.so");
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
   }
 
   // unction to call the native method from Java

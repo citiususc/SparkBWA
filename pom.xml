@@ -8,6 +8,14 @@
     <artifactId>sparkbwa</artifactId>
     <version>1.0</version>
 
+    <repositories>
+        <repository>
+            <id>128</id>
+            <name>mvn.128.no</name>
+            <url>https://mvn.128.no/maven2</url>
+        </repository>
+    </repositories>
+
     <build>
         <plugins>
             <plugin>
@@ -49,6 +57,11 @@
             <artifactId>spark-core_2.10</artifactId>
             <version>1.6.1</version>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>cz.adamh.utils</groupId>
+            <artifactId>native-utils</artifactId>
+            <version>1.0-SNAPSHOT</version>
         </dependency>
     </dependencies>
 </project>
