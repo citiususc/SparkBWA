@@ -58,13 +58,7 @@ public class BwaOptions {
   private String outputPath = "";
   private int partitionNumber = 0;
 
-  /** Constructor to use from the Spark shell. No arguments are provided */
   public BwaOptions() {
-
-    Options options = this.initOptions();
-
-    HelpFormatter formatter = new HelpFormatter();
-    formatter.printHelp(correctUse, header, options, footer, true);
   }
 
   /**
