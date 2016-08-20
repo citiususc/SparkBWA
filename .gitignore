@@ -5,3 +5,4 @@ target
 .idea
 sparkbwa.iml
 sparkbwa_out
+src/main/resources/libbwa.so
