@@ -146,7 +146,7 @@ public class BwaInterpreter {
     LOG.info("JMAbuin::Not sorting in HDFS. Timing: " + startTime);
 
     // Read the two FASTQ files from HDFS using the FastqInputFormat class
-    JavaPairRDD<Long, String> singleReadsKeyVal = loadFastq(this.options.getInputPath());
+    JavaPairRDD<Long, String> singleReadsKeyVal = loadFastq(this.ctx, this.options.getInputPath());
 
     // Sort in memory with no partitioning
     if ((options.getPartitionNumber() == 0) && (options.isSortFastqReads())) {
@@ -201,12 +201,12 @@ public class BwaInterpreter {
     return readsRDD;
   }
 
-  private JavaPairRDD<Long, String> loadFastq(String pathToFastq) {
-    JavaRDD<String> fastqLines = this.ctx.textFile(pathToFastq);
+  public static JavaPairRDD<Long, String> loadFastq(JavaSparkContext ctx, String pathToFastq) {
+    JavaRDD<String> fastqLines = ctx.textFile(pathToFastq);
 
-    // Determine which FASTQ record the line belongs to.k
+    // Determine which FASTQ record the line belongs to.
     JavaPairRDD<Long, String> fastqLinesByRecordNum = fastqLines.zipWithIndex()
-                                                                .mapValues(lineNum -> (long) Math.ceil(lineNum / 4))
+                                                                .mapValues(lineNum -> (long) Math.floor(lineNum / 4))
                                                                 .mapToPair(Tuple2::swap);
 
     // Group group the lines which belongs to the same record, and concatinate them into a record.
@@ -221,8 +221,8 @@ public class BwaInterpreter {
     LOG.info("JMAbuin::Not sorting in HDFS. Timing: " + startTime);
 
     // Read the two FASTQ files from HDFS using the FastqInputFormat class
-    JavaPairRDD<Long, String> datasetTmp1 = loadFastq(options.getInputPath());
-    JavaPairRDD<Long, String> datasetTmp2 = loadFastq(options.getInputPath2());
+    JavaPairRDD<Long, String> datasetTmp1 = loadFastq(this.ctx, options.getInputPath());
+    JavaPairRDD<Long, String> datasetTmp2 = loadFastq(this.ctx, options.getInputPath2());
     JavaPairRDD<Long, Tuple2<String, String>> pairedReadsRDD = datasetTmp1.join(datasetTmp2);
 
     datasetTmp1.unpersist();
