@@ -1,5 +1,16 @@
 # What's SparkBWA about? #
 
+#todo
+* docker hadoop/spark
+* configure/install test set and automate test
+* use maven instead of libs
+* unit tests
+* refactor code
+* hide jni interface after protocol buffer interface
+* hide spark/hadoop after protocol buffer interface
+* create docker microservice for bwa with protocol buffer interface
+* connect spark/hadoop box with bwa microservice using protocol buffers
+
 **SparkBWA** is a tool that integrates the Burrows-Wheeler Aligner--[BWA][1] on a [Apache Spark][4] framework running on the top of [Hadoop][2]. The current version of SparkBWA (v0.1, march 2016) supports the following BWA algorithms:
 
 * **BWA-MEM**
