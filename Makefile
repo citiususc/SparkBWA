@@ -17,7 +17,7 @@ bwa:
 
 sparkbwa:
 	if [ ! -d "$(BUILD_DIR)" ]; then mkdir $(BUILD_DIR); fi
-	$(CC) $(SPARKBWA_FLAGS) $(SRC_DIR)/bwa_jni.c -o $(BUILD_DIR)/bwa_jni.o $(LIBBWA_LIBS) 
+	$(CC) $(SPARKBWA_FLAGS) $(SRC_DIR)/bwa_jni.c -o $(BUILD_DIR)/bwa_jni.o $(LIBBWA_LIBS)
 
 libbwa.so: sparkbwa bwa
 	$(CC) $(LIBBWA_FLAGS) $(BUILD_DIR)/libbwa.so $(BUILD_DIR)/*.o $(LIBBWA_LIBS)
@@ -25,7 +25,7 @@ libbwa.so: sparkbwa bwa
 
 sparkbwa_java: libbwa.so
 	cd $(LIBS_DIR) && wget $(SPARK_URL) && tar xzvf $(SPARK_PACKAGE) && cp spark-1.6.1-bin-hadoop2.6/lib/spark-assembly-1.6.1-hadoop2.6.0.jar ./ && rm -Rf spark-1.6.1-bin-hadoop2.6 && rm $(SPARK_PACKAGE) && cd ..
-	$(JAVAC) -cp $(JAR_FILES) -d $(BUILD_DIR) -Xlint:none $(SRC_DIR)/*.java
+	$(JAVAC) -encoding UTF8 -cp $(JAR_FILES) -d $(BUILD_DIR) -Xlint:none $(SRC_DIR)/*.java
 	cd $(BUILD_DIR) && $(JAR) cfe SparkBWA.jar SparkBWA ./*.class && cd ..
 	#cd $(BUILD_DIR) && $(JAR) cfe SparkBWASeq.jar BwaSeq ./*.class && cd ..
 

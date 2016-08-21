@@ -572,7 +572,7 @@ public class BwaInterpreter {
 
 		@Override
 		public Tuple2<String, String> call(Tuple2<Long, String> arg0) throws Exception {
-			String reads[] = arg0._2.split("\n");
+			String reads[] = arg0._2().split("\n");
 
 			String record1[] = {reads[0],reads[2],reads[4],reads[6]};
 			String record2[] = {reads[1],reads[3],reads[5],reads[7]};
@@ -583,8 +583,6 @@ public class BwaInterpreter {
 
 			return new Tuple2<String,String>(value1,value2);
 		}
-
-
 	}
 
 	/**
@@ -617,7 +615,7 @@ public class BwaInterpreter {
 
 				entry = arg0.next();
 
-				String reads[] = entry._2.split("\n");
+				String reads[] = entry._2().split("\n");
 
 
 				String record1[] = {reads[0],reads[2],reads[4],reads[6]};
