@@ -1,5 +1,7 @@
 jni/build
 target
+*.o
+*.a
 *.sw*
 *.class
 .idea
