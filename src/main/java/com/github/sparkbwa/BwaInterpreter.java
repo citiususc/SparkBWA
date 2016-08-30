@@ -305,7 +305,7 @@ public class BwaInterpreter {
    * @brief This function runs BWA with the input data selected and with the options also selected
    *     by the user.
    */
-  public void RunBwa() {
+  public void runBwa() {
     LOG.info("JMAbuin:: Starting BWA");
     Bwa bwa = new Bwa(this.options);
 
