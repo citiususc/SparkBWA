@@ -126,18 +126,6 @@ public class BwaInterpreter {
     }
   }
 
-  private void setSparkSettings() {
-    // Some configuration options are set. However, the option to load the
-    // bwa library needs to be specified in the Spark configuration files,
-    // because these options does not work (neither of them)
-    this.sparkConf.set("spark.yarn.dist.archives", "./bwa.zip");
-    this.conf.set("mapreduce.map.env", "LD_LIBRARY_PATH=./bwa.zip/");
-    this.conf.set("mapreduce.reduce.env", "LD_LIBRARY_PATH=./bwa.zip/");
-    this.sparkConf.set("spark.driver.extraLibraryPath", "./bwa.zip/");
-    this.sparkConf.set("spark.executor.extraLibraryPath", "./bwa.zip/");
-    this.sparkConf.set("spark.executor.extraJavaOptions", "-Djava.library.path=./bwa.zip/");
-  }
-
   private JavaRDD<String> handleSingleReadsSorting() {
     JavaRDD<String> readsRDD = null;
 
@@ -387,8 +375,6 @@ public class BwaInterpreter {
 
     createOutputFolder();
     setTotalInputLength();
-
-    setSparkSettings();
 
     ContextCleaner cleaner = this.ctx.sc().cleaner().get();
   }
