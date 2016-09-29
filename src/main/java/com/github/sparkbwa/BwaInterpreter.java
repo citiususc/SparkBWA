@@ -193,7 +193,7 @@ public class BwaInterpreter {
     JavaRDD<String> fastqLines = ctx.textFile(pathToFastq);
 
     // Determine which FASTQ record the line belongs to.
-    JavaPairRDD<Long, Tuple2<String, Long>> fastqLinesByRecordNum = fastqLines.zipWithIndex().mapToPair(Tuple2::swap).mapToPair(new FASTQRecordGrouper());
+    JavaPairRDD<Long, Tuple2<String, Long>> fastqLinesByRecordNum = fastqLines.zipWithIndex().mapToPair(new FASTQRecordGrouper());
 
     // Group group the lines which belongs to the same record, and concatinate them into a record.
     return fastqLinesByRecordNum.groupByKey().mapValues(new FASTQRecordCreator());
