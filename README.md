@@ -46,15 +46,12 @@ The default way to build **SparkBWA** is:
 This will create the *build* folder, which will contain two main files:
 
 * **SparkBWA.jar** - jar file to launch with Spark.
-* **bwa.zip** - File containing the BWA library needed to execute with Spark.
 
 ## Configuring Spark
 Spark only need to be stored in the Hadoop cluster master node. It can be downloaded as a binary or can be built from source. Either way, some parameters need to be adjusted to run **SparkBWA**. Assuming that Spark is stored at *spark_dir*, we need to modify the following file:
 * **spark_dir/conf/spark-defaults.conf**. If it does not exist, copy it from *spark-defaults.conf.template*, in the same directory.
 
-The next two lines must be included in the file:
-	
-	spark.executor.extraJavaOptions		-Djava.library.path=./bwa.zip
+The next line must be included in the file:
 	spark.yarn.executor.memoryOverhead	8704
 	
 In this way, Spark executors are able to find the BWA library (first line). The second line sets the amount of off-heap memory (in megabytes) to be allocated per YARN container.
@@ -81,7 +78,7 @@ and uploaded to HDFS:
 	
 Finally, we can execute **SparkBWA** on the cluster. Again, we assume that Spark is stored at *spark_dir*:
 
-	spark_dir/bin/spark-submit --class SparkBWA --master yarn-client --driver-memory 1500m --executor-memory 1500m --executor-cores 1 --archives bwa.zip --verbose --num-executors 32 SparkBWA.jar -algorithm mem -reads paired -index /Data/HumanBase/hg38 -partitions 32 ERR000589_1.filt.fastq ERR000589_2.filt.fastq Output_ERR000589
+	spark_dir/bin/spark-submit --class SparkBWA --master yarn-client --driver-memory 1500m --executor-memory 1500m --executor-cores 1 --verbose --num-executors 32 SparkBWA.jar -algorithm mem -reads paired -index /Data/HumanBase/hg38 -partitions 32 ERR000589_1.filt.fastq ERR000589_2.filt.fastq Output_ERR000589
 
 Options:
 * **-algorithm mem** - Sequence alignment algorithm (mem - *BWA-MEM*, aln - *BWA-backtrack*).
@@ -129,13 +126,6 @@ alignment benchmarks which proves this.
 
 ####<a name="building1"></a>1. I can not build the tool because *jni_md.h* or *jni.h* is missing.
 You need to set correctly your *JAVA_HOME* environment variable or you can set it in Makefile.common.
-
-####<a name="librarypatherror"></a>2. SparkBWA fails with message *java.lang.UnsatisfiedLinkError: no bwa in java.library.path*.
-SparkBWA uses the Hadoop distributed cache to store the shared library that gives access to bwa from Spark, *libbwa.so*. This library is passed to each executor with the *--archives* option used when launching Spark. The argument to this option is the file *bwa.zip*. By default, this zip file is uncompressed in each executor working directory under the path *working_directory/bwa.zip/libbwa.so*. So, because of that, the option in spark-defaults.conf must be **always**:
-
-	spark.executor.extraJavaOptions		-Djava.library.path=./bwa.zip
-
-With this, we are indicating that the executor must search in the current working directory inside the ./bwa.sip/ directory for any library. If the user sets this option to the zip file created when building SparkBWA, the execution is going to fail.
 
 [1]: https://github.com/lh3/bwa
 [2]: https://hadoop.apache.org/
