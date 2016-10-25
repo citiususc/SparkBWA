@@ -1,4 +1,3 @@
-jni/build
 target
 *.o
 *.a
@@ -6,6 +5,5 @@ target
 *.class
 .idea
 sparkbwa.iml
-sparkbwa_out
 src/main/resources/libbwa.so
 dependency-reduced-pom.xml
