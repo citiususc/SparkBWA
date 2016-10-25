@@ -107,7 +107,7 @@ public abstract class BwaAlignmentBase implements Serializable {
 
     this.LOG.info("JMAbuin:: " + this.appId + " - " + this.appName + " Copying files...");
     try {
-        if (outputDir.startsWith("hdfs")) {
+        //if (outputDir.startsWith("hdfs")) {
           Configuration conf = new Configuration();
           FileSystem fs = FileSystem.get(conf);
 
@@ -115,11 +115,11 @@ public abstract class BwaAlignmentBase implements Serializable {
                   new Path(this.bwaInterpreter.getOutputFile()),
                   new Path(outputDir + "/" + outputSamFileName)
           );
-      } else {
+      /*} else {
         File localSamOutput = new File(this.bwaInterpreter.getOutputFile());
         Files.copy(Paths.get(localSamOutput.getPath()), Paths.get(outputDir, localSamOutput.getName()));
 
-      }
+      }*/
     } catch (IOException e) {
       e.printStackTrace();
       this.LOG.error(e.toString());
