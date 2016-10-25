@@ -14,6 +14,7 @@
  * <p>You should have received a copy of the GNU General Public License along with SparkBWA. If not,
  * see <http://www.gnu.org/licenses/>.
  */
+
 package com.github.sparkbwa;
 
 public class SparkBWA {

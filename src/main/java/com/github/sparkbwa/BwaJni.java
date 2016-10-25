@@ -35,7 +35,7 @@ public class BwaJni {
     }
   }
 
-  // unction to call the native method from Java
+  // Function to call the native method from Java
   public static int Bwa_Jni(String[] args) {
 
     int[] lenStrings = new int[args.length];
