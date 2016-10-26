@@ -23,59 +23,73 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-public class BwaSingleAlignment extends BwaAlignmentBase
-    implements Function2<Integer, Iterator<String>, Iterator<String>> {
+/**
+ * Class to perform the alignment over a split from the RDD of single reads
+ *
+ * @author José M. Abuín
+ */
+public class BwaSingleAlignment extends BwaAlignmentBase implements Function2<Integer, Iterator<String>, Iterator<String>> {
 
-  public BwaSingleAlignment(SparkContext context, Bwa bwaInterpreter) {
-    super(context, bwaInterpreter);
-  }
+	/**
+	 * Constructor
+	 * @param context The Spark context
+	 * @param bwaInterpreter The BWA interpreter object to use
+	 */
+	public BwaSingleAlignment(SparkContext context, Bwa bwaInterpreter) {
+		super(context, bwaInterpreter);
+	}
 
-  /**
-   * Code to run in each one of the mappers. This is, the alignment with the corresponding entry
-   * data The entry data has to be written into the local filesystem
-   */
-  public Iterator<String> call(Integer arg0, Iterator<String> arg1) throws Exception {
 
-    LOG.info("JMAbuin:: Tmp dir: " + this.tmpDir);
-    String fastqFileName1 = this.tmpDir + this.appId + "-RDD" + arg0 + "_1";
+	/**
+	 * Code to run in each one of the mappers. This is, the alignment with the corresponding entry
+	 * data The entry data has to be written into the local filesystem
+	 * @param arg0 The RDD Id
+	 * @param arg1 An iterator containing the values in this RDD
+	 * @return An iterator containing the sam file name generated
+	 * @throws Exception
+	 */
+	public Iterator<String> call(Integer arg0, Iterator<String> arg1) throws Exception {
 
-    LOG.info("JMAbuin:: Writing file: " + fastqFileName1);
+		LOG.info("["+this.getClass().getName()+"] :: Tmp dir: " + this.tmpDir);
+		String fastqFileName1 = this.tmpDir + this.appId + "-RDD" + arg0 + "_1";
 
-    File FastqFile1 = new File(fastqFileName1);
-    FileOutputStream fos1;
-    BufferedWriter bw1;
+		LOG.info("["+this.getClass().getName()+"] :: Writing file: " + fastqFileName1);
 
-    ArrayList<String> returnedValues = new ArrayList<String>();
+		File FastqFile1 = new File(fastqFileName1);
+		FileOutputStream fos1;
+		BufferedWriter bw1;
 
-    try {
-      fos1 = new FileOutputStream(FastqFile1);
-      bw1 = new BufferedWriter(new OutputStreamWriter(fos1));
+		ArrayList<String> returnedValues = new ArrayList<String>();
 
-      String newFastqRead;
+		try {
+			fos1 = new FileOutputStream(FastqFile1);
+			bw1 = new BufferedWriter(new OutputStreamWriter(fos1));
 
-      while (arg1.hasNext()) {
-        newFastqRead = arg1.next();
+			String newFastqRead;
 
-        bw1.write(newFastqRead);
-        bw1.newLine();
-      }
+			while (arg1.hasNext()) {
+				newFastqRead = arg1.next();
 
-      bw1.close();
+				bw1.write(newFastqRead);
+				bw1.newLine();
+			}
 
-      //We do not need the input data anymore, as it is written in a local file
-      arg1 = null;
+			bw1.close();
 
-      returnedValues = this.runAlignmentProcess(arg0, fastqFileName1, null);
-      // Delete the temporary file, as is have now been copied to the
-      // output directory
-      FastqFile1.delete();
+			//We do not need the input data anymore, as it is written in a local file
+			arg1 = null;
 
-    } catch (FileNotFoundException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
-      LOG.error(e.toString());
-    }
+			// This is where the actual local alignment takes place
+			returnedValues = this.runAlignmentProcess(arg0, fastqFileName1, null);
 
-    return returnedValues.iterator();
-  }
+			// Delete the temporary file, as is have now been copied to the output directory
+			FastqFile1.delete();
+
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+			LOG.error("["+this.getClass().getName()+"] "+e.toString());
+		}
+
+		return returnedValues.iterator();
+	}
 }
