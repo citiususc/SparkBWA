@@ -27,29 +27,34 @@ import java.io.IOException;
  */
 public class BwaJni {
 
-  static {
-    try {
-      NativeUtils.loadLibraryFromJar("/libbwa.so");
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
-  }
+	static {
+		try {
+			NativeUtils.loadLibraryFromJar("/libbwa.so");
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
 
-  // Function to call the native method from Java
-  public static int Bwa_Jni(String[] args) {
+	/**
+	 * Function to call BWA native main method from Java
+	 * @param args A String array with the arguments to call BWA
+	 * @return The BWA integer result value
+	 */
+	public static int Bwa_Jni(String[] args) {
 
-    int[] lenStrings = new int[args.length];
+		int[] lenStrings = new int[args.length];
 
-    int i = 0;
+		int i = 0;
 
-    for (String argumento : args) {
-      lenStrings[i] = argumento.length();
-    }
+		for (String argumento : args) {
+			lenStrings[i] = argumento.length();
+		}
 
-    int returnCode = new BwaJni().bwa_jni(args.length, args, lenStrings);
-    return returnCode;
-  }
+		int returnCode = new BwaJni().bwa_jni(args.length, args, lenStrings);
 
-  //Declaration of native method
-  private native int bwa_jni(int argc, String[] argv, int[] lenStrings);
+		return returnCode;
+	}
+
+	//Declaration of native method
+	private native int bwa_jni(int argc, String[] argv, int[] lenStrings);
 }

@@ -27,482 +27,495 @@ import org.apache.commons.logging.LogFactory;
  */
 public class BwaOptions {
 
-  private static final Log LOG = LogFactory.getLog(BwaOptions.class);
+	private static final Log LOG = LogFactory.getLog(BwaOptions.class);
 
-  private boolean memAlgorithm = true;
-  private boolean alnAlgorithm = false;
-  private boolean bwaswAlgorithm = false;
-  private String bwaArgs = "";
+	private boolean memAlgorithm 	= true;
+	private boolean alnAlgorithm 	= false;
+	private boolean bwaswAlgorithm 	= false;
+	private String bwaArgs 			= "";
 
-  private boolean pairedReads = true;
-  private boolean singleReads = false;
+	private boolean pairedReads = true;
+	private boolean singleReads = false;
 
-  private String indexPath = "";
-  private String outputHdfsDir = "";
-  private String inputPath = "";
-  private String inputPath2 = "";
-  private boolean sortFastqReads = false;
-  private boolean sortFastqReadsHdfs = false;
-  private String correctUse =
-      "spark-submit --class SparkBWA [Spark options] SparkBWA.jar [SparkBWA Options] Input.fastq [Input2.fastq] Output\n"
-          + "\n\n"
-          + "To set the Input.fastq - setInputPath(string)\n"
-          + "To set the Input2.fastq - setInputPath2(string)\n"
-          + "To set the Output - setOutputPath(string)\n"
-          + "The available SparkBWA options are: \n\n";
+	private String indexPath 			= "";
+	private String outputHdfsDir 		= "";
+	private String inputPath 			= "";
+	private String inputPath2 			= "";
+	private boolean sortFastqReads 		= false;
+	private boolean sortFastqReadsHdfs 	= false;
 
-  /* Header to show when the program is not launched correctly */
+	private String correctUse =
+		"spark-submit --class com.github.sparkbwa.SparkBWA [Spark options] sparkbwa-0.2.jar [SparkBWA Options] Input.fastq [Input2.fastq] Output\n"
+		+ "\n\n"
+		+ "To set the Input.fastq - setInputPath(string)\n"
+		+ "To set the Input2.fastq - setInputPath2(string)\n"
+		+ "To set the Output - setOutputPath(string)\n"
+		+ "The available SparkBWA options are: \n\n";
+
+  // Header to show when the program is not launched correctly
   private String header = "Performs genomic alignment using bwa in a Hadoop cluster\n\n";
-  /* Footer to show when the program is not launched correctly */
+  // Footer to show when the program is not launched correctly
   private String footer = "\nPlease report issues at josemanuel.abuin@usc.es";
   private String outputPath = "";
   private int partitionNumber = 0;
 
+	/**
+	 * Constructor to use with no options
+	 */
   public BwaOptions() {
   }
 
-  /**
-   * Constructor to use from within SparkBWA from the Linux console
-   *
-   * @param args The arguments that the user is going to provide from the Linux console
-   */
-  public BwaOptions(String[] args) {
+	/**
+	 * Constructor to use from within SparkBWA from the Linux console
+	 *
+	 * @param args The arguments that the user is going to provide from the Linux console
+	 */
+	public BwaOptions(String[] args) {
 
-    //Parse arguments
-    for (String argumento : args) {
-      LOG.info("JMAbuin:: Received argument: " + argumento);
-    }
+		//Parse arguments
+		for (String argument : args) {
+			LOG.info("["+this.getClass().getName()+"] :: Received argument: " + argument);
+		}
 
-    //Algorithm options
-    Options options = this.initOptions();
+		//Algorithm options
+		Options options = this.initOptions();
 
-    //To print the help
-    HelpFormatter formatter = new HelpFormatter();
-    //formatter.printHelp( correctUse,header, options,footer , true);
+		//To print the help
+		HelpFormatter formatter = new HelpFormatter();
+		//formatter.printHelp( correctUse,header, options,footer , true);
 
-    //Parse the given arguments
-    CommandLineParser parser = new BasicParser();
-    CommandLine cmd;
-    try {
-      cmd = parser.parse(options, args);
+		//Parse the given arguments
+		CommandLineParser parser = new BasicParser();
+		CommandLine cmd;
 
-      //We look for the algorithm
-      if (cmd.hasOption("algorithm")) {
+		try {
+			cmd = parser.parse(options, args);
 
-        if (cmd.getOptionValue("algorithm").equals("mem")) {
-          //Case of the mem algorithm
-          memAlgorithm = true;
-          alnAlgorithm = false;
-          bwaswAlgorithm = false;
-        } else if (cmd.getOptionValue("algorithm").equals("aln")) {
-          // Case of aln algorithm
-          alnAlgorithm = true;
-          memAlgorithm = false;
-          bwaswAlgorithm = false;
-        } else if (cmd.getOptionValue("algorithm").equals("bwasw")) {
-          // Case of bwasw algorithm
-          bwaswAlgorithm = true;
-          memAlgorithm = false;
-          alnAlgorithm = false;
-        } else {
-          LOG.warn(
-              "The algorithm "
-                  + cmd.getOptionValue("algorithm")
-                  + " could not be found\nSetting to default mem algorithm\n");
-          memAlgorithm = true;
-          alnAlgorithm = false;
-          bwaswAlgorithm = false;
-        }
-      }
+			//We look for the algorithm
+			if (cmd.hasOption("algorithm")) {
+				if (cmd.getOptionValue("algorithm").equals("mem")) {
+					//Case of the mem algorithm
+					memAlgorithm = true;
+					alnAlgorithm = false;
+					bwaswAlgorithm = false;
+				}
+				else if (cmd.getOptionValue("algorithm").equals("aln")) {
+					// Case of aln algorithm
+					alnAlgorithm = true;
+					memAlgorithm = false;
+					bwaswAlgorithm = false;
+				}
+				else if (cmd.getOptionValue("algorithm").equals("bwasw")) {
+					// Case of bwasw algorithm
+					bwaswAlgorithm = true;
+					memAlgorithm = false;
+					alnAlgorithm = false;
+				}
+				else {
+					LOG.warn("["+this.getClass().getName()+"] :: The algorithm "
+						+ cmd.getOptionValue("algorithm")
+						+ " could not be found\nSetting to default mem algorithm\n");
 
-      //We look for the index
-      if (cmd.hasOption("index")) {
-        indexPath = cmd.getOptionValue("index");
-      } else {
-        LOG.error("No index has been found. Aborting.");
-        formatter.printHelp(correctUse, header, options, footer, true);
-        System.exit(1);
-      }
+					memAlgorithm = true;
+					alnAlgorithm = false;
+					bwaswAlgorithm = false;
+				}
+			}
 
-      //Partition number
-      if (cmd.hasOption("partitions")) {
-        partitionNumber = Integer.parseInt(cmd.getOptionValue("partitions"));
-      }
+			//We look for the index
+			if (cmd.hasOption("index")) {
+				indexPath = cmd.getOptionValue("index");
+			}
+			else {
+				LOG.error("["+this.getClass().getName()+"] :: No index has been found. Aborting.");
+				formatter.printHelp(correctUse, header, options, footer, true);
+				System.exit(1);
+			}
 
-      if (cmd.hasOption("bwaArgs")) {
-        bwaArgs = cmd.getOptionValue("bwaArgs");
-      }
+			//Partition number
+			if (cmd.hasOption("partitions")) {
+				partitionNumber = Integer.parseInt(cmd.getOptionValue("partitions"));
+			}
 
-      //We look if we want the paired or single algorithm
-      if (cmd.hasOption("reads")) {
-        if (cmd.getOptionValue("reads").equals("single")) {
-          pairedReads = false;
-          singleReads = true;
-        } else if (cmd.getOptionValue("reads").equals("paired")) {
-          pairedReads = true;
-          singleReads = false;
-        } else {
-          LOG.warn("Reads argument could not be found\nSetting it to default paired reads\n");
-          pairedReads = true;
-          singleReads = false;
-        }
-      }
+			if (cmd.hasOption("bwaArgs")) {
+				bwaArgs = cmd.getOptionValue("bwaArgs");
+			}
 
-      //Sorting input reads
-      if (cmd.hasOption("sorting")) {
-        if (cmd.getOptionValue("sorting").equals("hdfs")) {
-          this.sortFastqReadsHdfs = true;
-          this.sortFastqReads = false;
-        } else if (cmd.getOptionValue("sorting").equals("spark")) {
-          this.sortFastqReadsHdfs = false;
-          this.sortFastqReads = true;
-        }
-      }
+			//We look if we want the paired or single algorithm
+			if (cmd.hasOption("reads")) {
+				if (cmd.getOptionValue("reads").equals("single")) {
+					pairedReads = false;
+					singleReads = true;
+				}
+				else if (cmd.getOptionValue("reads").equals("paired")) {
+					pairedReads = true;
+					singleReads = false;
+				}
+				else {
+					LOG.warn("["+this.getClass().getName()+"] :: Reads argument could not be found\nSetting it to default paired reads\n");
+					pairedReads = true;
+					singleReads = false;
+				}
+			}
 
-      //Input and output paths
-      String otherArguments[] = cmd.getArgs(); //With this we get the rest of the arguments
+			//Sorting input reads
+			if (cmd.hasOption("sorting")) {
+				if (cmd.getOptionValue("sorting").equals("hdfs")) {
+					this.sortFastqReadsHdfs = true;
+					this.sortFastqReads = false;
+				}
+				else if (cmd.getOptionValue("sorting").equals("spark")) {
+					this.sortFastqReadsHdfs = false;
+					this.sortFastqReads = true;
+				}
+			}
 
-      if ((otherArguments.length != 2) && (otherArguments.length != 3)) {
-        LOG.error("No input and output has been found. Aborting.");
+			//Input and output paths
+			String otherArguments[] = cmd.getArgs(); //With this we get the rest of the arguments
 
-        for (String tmpString : otherArguments) {
-          LOG.error("Other args:: " + tmpString);
-        }
+			if ((otherArguments.length != 2) && (otherArguments.length != 3)) {
+				LOG.error("["+this.getClass().getName()+"] No input and output has been found. Aborting.");
 
-        formatter.printHelp(correctUse, header, options, footer, true);
-        System.exit(1);
-      } else if (otherArguments.length == 2) {
-        inputPath = otherArguments[0];
-        outputPath = otherArguments[1];
-      } else if (otherArguments.length == 3) {
-        inputPath = otherArguments[0];
-        inputPath2 = otherArguments[1];
-        outputPath = otherArguments[2];
-      }
+				for (String tmpString : otherArguments) {
+					LOG.error("["+this.getClass().getName()+"] Other args:: " + tmpString);
+				}
 
-    } catch (UnrecognizedOptionException e) {
-      e.printStackTrace();
-      formatter.printHelp(correctUse, header, options, footer, true);
-      System.exit(1);
+				formatter.printHelp(correctUse, header, options, footer, true);
+				System.exit(1);
+			}
+			else if (otherArguments.length == 2) {
+				inputPath = otherArguments[0];
+				outputPath = otherArguments[1];
+			}
+			else if (otherArguments.length == 3) {
+				inputPath = otherArguments[0];
+				inputPath2 = otherArguments[1];
+				outputPath = otherArguments[2];
+			}
 
-    } catch (ParseException e) {
-      //formatter.printHelp( correctUse,header, options,footer , true);
-      e.printStackTrace();
-      System.exit(1);
-    }
-  }
+		} catch (UnrecognizedOptionException e) {
+			e.printStackTrace();
+			formatter.printHelp(correctUse, header, options, footer, true);
+			System.exit(1);
+		} catch (ParseException e) {
+			//formatter.printHelp( correctUse,header, options,footer , true);
+			e.printStackTrace();
+			System.exit(1);
+		}
+	}
 
-  /**
-   * Function to init the SparkBWA available options
-   *
-   * @return An Options object containing the available options
-   */
-  public Options initOptions() {
+	/**
+	* Function to init the SparkBWA available options
+	*
+	* @return An Options object containing the available options
+	*/
+	public Options initOptions() {
 
-    Options options = new Options();
+		Options options = new Options();
 
-    //Algorithm options
-    Option algorithm =
-        new Option("algorithm", true, "Specify the algorithm to use during the alignment");
-    algorithm.setArgName("mem|aln|bwasw");
+		//Algorithm options
+		Option algorithm = new Option("algorithm", true, "Specify the algorithm to use during the alignment");
+		algorithm.setArgName("mem|aln|bwasw");
 
-    options.addOption(algorithm);
+		options.addOption(algorithm);
 
-    //Paired or single reads
-    Option reads = new Option("reads", true, "Type of reads to use during alignment");
-    reads.setArgName("paired|single");
+		//Paired or single reads
+		Option reads = new Option("reads", true, "Type of reads to use during alignment");
+		reads.setArgName("paired|single");
 
-    options.addOption(reads);
+		options.addOption(reads);
 
-    // Options to BWA
-    Option bwaArgs = new Option("bwaArgs", true, "Arguments passed directly to BWA");
-    bwaArgs.setArgName("\"BWA arguments\"");
-    options.addOption(bwaArgs);
+		// Options to BWA
+		Option bwaArgs = new Option("bwaArgs", true, "Arguments passed directly to BWA");
+		bwaArgs.setArgName("\"BWA arguments\"");
+		options.addOption(bwaArgs);
 
-    //Index
-    Option index =
-        new Option(
-            "index", true, "Prefix for the index created by bwa to use - setIndexPath(string)");
-    index.setArgName("Index prefix");
+		//Index
+		Option index = new Option("index", true, "Prefix for the index created by bwa to use - setIndexPath(string)");
+		index.setArgName("Index prefix");
 
-    options.addOption(index);
+		options.addOption(index);
 
-    //Partition number
-    Option partitions =
-        new Option(
-            "partitions",
-            true,
-            "Number of partitions to divide input reads - setPartitionNumber(int)");
-    partitions.setArgName("Number of partitions");
+		//Partition number
+		Option partitions = new Option("partitions", true,
+				"Number of partitions to divide input reads - setPartitionNumber(int)");
+		partitions.setArgName("Number of partitions");
 
-    options.addOption(partitions);
+		options.addOption(partitions);
 
-    Option sorting =
-        new Option("sorting", true, "Type of algorithm used to sort input FASTQ reads");
-    sorting.setArgName("hdfs|spark");
+		Option sorting = new Option("sorting", true, "Type of algorithm used to sort input FASTQ reads");
+		sorting.setArgName("hdfs|spark");
 
-    options.addOption(sorting);
+		options.addOption(sorting);
 
-    return options;
-  }
+		return options;
+	}
 
-  public String getBwaArgs() {
-    return bwaArgs;
-  }
+	/**
+	 * Getter for BWA args
+	 * @return A String containing additional BWA arguments
+	 */
+	public String getBwaArgs() {
+		return bwaArgs;
+	}
 
-  public void setBwaArgs(String bwaArgs) {
-    this.bwaArgs = bwaArgs;
-  }
+	/**
+	 * Setter for BWA additional arguments
+	 * @param bwaArgs
+	 */
+	public void setBwaArgs(String bwaArgs) {
+		this.bwaArgs = bwaArgs;
+	}
 
-  /**
-   * Getter for the output directory in HDFS
-   *
-   * @return A string containing the output directory in HDFS
-   */
-  public String getOutputHdfsDir() {
-    return outputHdfsDir;
-  }
+	/**
+	* Getter for the output directory in HDFS
+	*
+	* @return A string containing the output directory in HDFS
+	*/
+	public String getOutputHdfsDir() {
+		return outputHdfsDir;
+	}
 
-  /**
-   * Setter for the output directory in HDFS
-   *
-   * @param outputHdfsDir String containing the path in HDFS where results are going to be stored
-   */
-  public void setOutputHdfsDir(String outputHdfsDir) {
-    this.outputHdfsDir = outputHdfsDir;
-  }
+	/**
+	* Setter for the output directory in HDFS
+	*
+	* @param outputHdfsDir String containing the path in HDFS where results are going to be stored
+	*/
+	public void setOutputHdfsDir(String outputHdfsDir) {
+		this.outputHdfsDir = outputHdfsDir;
+	}
 
-  /**
-   * Getter for the option of the "mem" algorithm
-   *
-   * @return A boolean value that is true if the "mem" algorithm is going to be used
-   */
-  public boolean isMemAlgorithm() {
-    return memAlgorithm;
-  }
+	/**
+	* Getter for the option of the "mem" algorithm
+	*
+	* @return A boolean value that is true if the "mem" algorithm is going to be used
+	*/
+	public boolean isMemAlgorithm() {
+		return memAlgorithm;
+	}
 
-  /**
-   * Setter for the option of the "mem" algorithm
-   *
-   * @param memAlgorithm A boolean value that is true if the "mem" algorithm is going to be used
-   */
-  public void setMemAlgorithm(boolean memAlgorithm) {
-    this.memAlgorithm = memAlgorithm;
+	/**
+	* Setter for the option of the "mem" algorithm
+	*
+	* @param memAlgorithm A boolean value that is true if the "mem" algorithm is going to be used
+	*/
+	public void setMemAlgorithm(boolean memAlgorithm) {
+		this.memAlgorithm = memAlgorithm;
 
-    if (memAlgorithm) {
-      this.setAlnAlgorithm(false);
-      this.setBwaswAlgorithm(false);
-    }
-  }
+		if (memAlgorithm) {
+			this.setAlnAlgorithm(false);
+			this.setBwaswAlgorithm(false);
+		}
+	}
 
-  /**
-   * Getter for the option of the "aln" algorithm
-   *
-   * @return A boolean value that is true if the "aln" algorithm is going to be used
-   */
-  public boolean isAlnAlgorithm() {
-    return alnAlgorithm;
-  }
+	/**
+	* Getter for the option of the "aln" algorithm
+	*
+	* @return A boolean value that is true if the "aln" algorithm is going to be used
+	*/
+	public boolean isAlnAlgorithm() {
+		return alnAlgorithm;
+	}
 
-  /**
-   * Setter for the option of the "aln" algorithm
-   *
-   * @param alnAlgorithm A boolean value that is true if the "aln" algorithm is going to be used
-   */
-  public void setAlnAlgorithm(boolean alnAlgorithm) {
-    this.alnAlgorithm = alnAlgorithm;
+	/**
+	* Setter for the option of the "aln" algorithm
+	*
+	* @param alnAlgorithm A boolean value that is true if the "aln" algorithm is going to be used
+	*/
+	public void setAlnAlgorithm(boolean alnAlgorithm) {
+		this.alnAlgorithm = alnAlgorithm;
 
-    if (alnAlgorithm) {
-      this.setMemAlgorithm(false);
-      this.setBwaswAlgorithm(false);
-    }
-  }
+		if (alnAlgorithm) {
+			this.setMemAlgorithm(false);
+			this.setBwaswAlgorithm(false);
+		}
+	}
 
-  /**
-   * Getter for the option of the "bwasw" algorithm
-   *
-   * @return A boolean value that is true if the "bwasw" algorithm is going to be used
-   */
-  public boolean isBwaswAlgorithm() {
-    return bwaswAlgorithm;
-  }
+	/**
+	* Getter for the option of the "bwasw" algorithm
+	*
+	* @return A boolean value that is true if the "bwasw" algorithm is going to be used
+	*/
+	public boolean isBwaswAlgorithm() {
+		return bwaswAlgorithm;
+	}
 
-  /**
-   * Setter for the option of the "bwasw" algorithm
-   *
-   * @param bwaswAlgorithm A boolean value that is true if the "bwasw" algorithm is going to be used
-   */
-  public void setBwaswAlgorithm(boolean bwaswAlgorithm) {
-    this.bwaswAlgorithm = bwaswAlgorithm;
+	/**
+	* Setter for the option of the "bwasw" algorithm
+	*
+	* @param bwaswAlgorithm A boolean value that is true if the "bwasw" algorithm is going to be used
+	*/
+	public void setBwaswAlgorithm(boolean bwaswAlgorithm) {
+		this.bwaswAlgorithm = bwaswAlgorithm;
 
-    if (bwaswAlgorithm) {
-      this.setAlnAlgorithm(false);
-      this.setMemAlgorithm(false);
-    }
-  }
+		if (bwaswAlgorithm) {
+			this.setAlnAlgorithm(false);
+			this.setMemAlgorithm(false);
+		}
+	}
 
-  /**
-   * Getter to know if the paired reads are going to be used
-   *
-   * @return A boolean value that indicates if paired reads are used
-   */
-  public boolean isPairedReads() {
-    return pairedReads;
-  }
+	/**
+	* Getter to know if the paired reads are going to be used
+	*
+	* @return A boolean value that indicates if paired reads are used
+	*/
+	public boolean isPairedReads() {
+		return pairedReads;
+	}
 
-  /**
-   * Setter for the option of paired reads
-   *
-   * @param pairedReads Boolean value that indicates if the paired reads are going to be used or not
-   */
-  public void setPairedReads(boolean pairedReads) {
-    this.pairedReads = pairedReads;
-  }
+	/**
+	* Setter for the option of paired reads
+	*
+	* @param pairedReads Boolean value that indicates if the paired reads are going to be used or not
+	*/
+	public void setPairedReads(boolean pairedReads) {
+		this.pairedReads = pairedReads;
+	}
 
-  /**
-   * Getter to know if the single reads are going to be used
-   *
-   * @return A boolean value that indicates if single reads are used
-   */
-  public boolean isSingleReads() {
-    return singleReads;
-  }
+	/**
+	* Getter to know if the single reads are going to be used
+	*
+	* @return A boolean value that indicates if single reads are used
+	*/
+	public boolean isSingleReads() {
+		return singleReads;
+	}
 
-  /**
-   * Setter for the option of single reads
-   *
-   * @param singleReads Boolean value that indicates if the single reads are going to be used or not
-   */
-  public void setSingleReads(boolean singleReads) {
-    this.singleReads = singleReads;
-  }
+	/**
+	* Setter for the option of single reads
+	*
+	* @param singleReads Boolean value that indicates if the single reads are going to be used or not
+	*/
+	public void setSingleReads(boolean singleReads) {
+		this.singleReads = singleReads;
+	}
 
-  /**
-   * Getter for the index path
-   *
-   * @return A String containing the path for the index
-   */
-  public String getIndexPath() {
-    return indexPath;
-  }
+	/**
+	* Getter for the index path
+	*
+	* @return A String containing the path for the index
+	*/
+	public String getIndexPath() {
+		return indexPath;
+	}
 
-  /**
-   * Setter for the index path
-   *
-   * @param indexPath A String containing the path where the index is stored
-   */
-  public void setIndexPath(String indexPath) {
-    this.indexPath = indexPath;
-  }
+	/**
+	* Setter for the index path
+	*
+	* @param indexPath A String containing the path where the index is stored
+	*/
+	public void setIndexPath(String indexPath) {
+		this.indexPath = indexPath;
+	}
 
-  /**
-   * Getter for the first of the FASTQ files
-   *
-   * @return A String with the path of the first of the FASTQ files
-   */
-  public String getInputPath() {
-    return inputPath;
-  }
+	/**
+	* Getter for the first of the FASTQ files
+	*
+	* @return A String with the path of the first of the FASTQ files
+	*/
+	public String getInputPath() {
+		return inputPath;
+	}
 
-  /**
-   * Setter for the first of the FASTQ files
-   *
-   * @param inputPath A String containing the path of the first of the FASTQ files
-   */
-  public void setInputPath(String inputPath) {
-    this.inputPath = inputPath;
-  }
+	/**
+	* Setter for the first of the FASTQ files
+	*
+	* @param inputPath A String containing the path of the first of the FASTQ files
+	*/
+	public void setInputPath(String inputPath) {
+		this.inputPath = inputPath;
+	}
 
-  /**
-   * Getter for the output path
-   *
-   * @return A String containing the location where the output files are going to be stored
-   */
-  public String getOutputPath() {
-    return outputPath;
-  }
+	/**
+	* Getter for the output path
+	*
+	* @return A String containing the location where the output files are going to be stored
+	*/
+	public String getOutputPath() {
+		return outputPath;
+	}
 
-  /**
-   * Setter for the output path
-   *
-   * @param outputPath A String containing the location where the output files are going to be
-   *     stored
-   */
-  public void setOutputPath(String outputPath) {
-    this.outputPath = outputPath;
-  }
+	/**
+	* Setter for the output path
+	*
+	* @param outputPath A String containing the location where the output files are going to be
+	*     stored
+	*/
+	public void setOutputPath(String outputPath) {
+		this.outputPath = outputPath;
+	}
 
-  /**
-   * Getter for the number of partitions to use
-   *
-   * @return An integer that represents the number of partitions to use
-   */
-  public int getPartitionNumber() {
-    return partitionNumber;
-  }
+	/**
+	* Getter for the number of partitions to use
+	*
+	* @return An integer that represents the number of partitions to use
+	*/
+	public int getPartitionNumber() {
+		return partitionNumber;
+	}
 
-  /**
-   * Setter for the number of partitions to use
-   *
-   * @param partitionNumber An integer that represents the number of partitions to use
-   */
-  public void setPartitionNumber(int partitionNumber) {
-    this.partitionNumber = partitionNumber;
-  }
+	/**
+	* Setter for the number of partitions to use
+	*
+	* @param partitionNumber An integer that represents the number of partitions to use
+	*/
+	public void setPartitionNumber(int partitionNumber) {
+		this.partitionNumber = partitionNumber;
+	}
 
-  /**
-   * Getter for the second of the FASTQ files
-   *
-   * @return A String with the path of the second of the FASTQ files
-   */
-  public String getInputPath2() {
-    return inputPath2;
-  }
+	/**
+	* Getter for the second of the FASTQ files
+	*
+	* @return A String with the path of the second of the FASTQ files
+	*/
+	public String getInputPath2() {
+		return inputPath2;
+	}
 
-  /**
-   * Setter for the second of the FASTQ files
-   *
-   * @param inputPath2 A String with the path of the second of the FASTQ files
-   */
-  public void setInputPath2(String inputPath2) {
-    this.inputPath2 = inputPath2;
-  }
+	/**
+	* Setter for the second of the FASTQ files
+	*
+	* @param inputPath2 A String with the path of the second of the FASTQ files
+	*/
+	public void setInputPath2(String inputPath2) {
+		this.inputPath2 = inputPath2;
+	}
 
-  /**
-   * Getter for the option to sort the input reads using Spark
-   *
-   * @return A boolean value that represents if the sorting method using Spark is going to be used
-   */
-  public boolean isSortFastqReads() {
-    return sortFastqReads;
-  }
+	/**
+	* Getter for the option to sort the input reads using Spark
+	*
+	* @return A boolean value that represents if the sorting method using Spark is going to be used
+	*/
+	public boolean isSortFastqReads() {
+		return sortFastqReads;
+	}
 
-  /**
-   * Setter for the option to sort the input reads using Spark
-   *
-   * @param sortFastqReads A boolean value that represents if the sorting method using Spark is
-   *     going to be used
-   */
-  public void setSortFastqReads(boolean sortFastqReads) {
-    this.sortFastqReads = sortFastqReads;
-  }
+	/**
+	* Setter for the option to sort the input reads using Spark
+	*
+	* @param sortFastqReads A boolean value that represents if the sorting method using Spark is
+	*     going to be used
+	*/
+	public void setSortFastqReads(boolean sortFastqReads) {
+		this.sortFastqReads = sortFastqReads;
+	}
 
-  /**
-   * Getter for the option to sort the input reads using HDFS
-   *
-   * @return A boolean value that represents if the sorting method using HDFS is going to be used
-   */
-  public boolean isSortFastqReadsHdfs() {
-    return sortFastqReadsHdfs;
-  }
+	/**
+	* Getter for the option to sort the input reads using HDFS
+	*
+	* @return A boolean value that represents if the sorting method using HDFS is going to be used
+	*/
+	public boolean isSortFastqReadsHdfs() {
+		return sortFastqReadsHdfs;
+	}
 
-  /**
-   * Setter for the option to sort the input reads using HDFS
-   *
-   * @param sortFastqReadsHdfs A boolean value that represents if the sorting method using HDFS is
-   *     going to be used
-   */
-  public void setSortFastqReadsHdfs(boolean sortFastqReadsHdfs) {
-    this.sortFastqReadsHdfs = sortFastqReadsHdfs;
-  }
+	/**
+	* Setter for the option to sort the input reads using HDFS
+	*
+	* @param sortFastqReadsHdfs A boolean value that represents if the sorting method using HDFS is
+	*     going to be used
+	*/
+	public void setSortFastqReadsHdfs(boolean sortFastqReadsHdfs) {
+		this.sortFastqReadsHdfs = sortFastqReadsHdfs;
+	}
 }
