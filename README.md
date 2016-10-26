@@ -1,6 +1,6 @@
 # What's SparkBWA about? #
 
-**SparkBWA** is a tool that integrates the Burrows-Wheeler Aligner--[BWA][1] on a [Apache Spark][4] framework running on the top of [Hadoop][2]. The current version of SparkBWA (v0.1, march 2016) supports the following BWA algorithms:
+**SparkBWA** is a tool that integrates the Burrows-Wheeler Aligner--[BWA][1] on a [Apache Spark][4] framework running on the top of [Hadoop][2]. The current version of SparkBWA (v0.2, October 2016) supports the following BWA algorithms:
 
 * **BWA-MEM**
 * **BWA-backtrack**
@@ -15,16 +15,15 @@ José M. Abuin, Juan C. Pichel, Tomás F. Pena and Jorge Amigo. ["SparkBWA: Spee
 A version for Hadoop is available [here](https://github.com/citiususc/BigBWA).
 
 # Structure #
-In this GitHub repository you can find the following directories:
+Since version 0.2 the project keeps a standard Maven structure. The source code is in the *src/main* folder. Inside it, we can find two subfolders:
 
-* bwa - This folder contains the BWA software package required to build **SparkBWA**. Currently it includes versions 0.5.10-mt, 0.7.12 and 0.7.15, but **SparkBWA** is able to work with old or later versions of BWA.
-* libs - It contains the Spark libraries needed to build **SparkBWA**. By default, libraries are downloaded at compilation time.
-* src - **SparkBWA** source code.
+* **java** - Here is where the Java code is stored.
+* **native** - Here the BWA native code (C) and the glue logic for JNI is stored.
 
 # Getting started #
 
 ## Requirements
-Requirements to build **SparkBWA** are the same than the ones to build BWA, with the only exception that the *JAVA_HOME* environment variable should be defined. If not, you can define it in the *Makefile.common* file. 
+Requirements to build **SparkBWA** are the same than the ones to build BWA, with the only exception that the *JAVA_HOME* environment variable should be defined. If not, you can define it in the */src/main/native/Makefile.common* file. 
 
 It is also needed to include the flag *-fPIC* in the *Makefile* of the considered BWA version. To do this, the user just need to add this option to the end of the *CFLAGS* variable in the BWA Makefile. Considering bwa-0.7.15, the original Makefile contains:
 
@@ -34,18 +33,18 @@ and after the change it should be:
 
 	CFLAGS=		-g -Wall -Wno-unused-function -O2 -fPIC
 
-To build the jar file required to execute on a Hadoop cluster, the Spark jar is necessary. This jar file is downloaded and can be found inside the "libs" folder. This can also be configured in *Makefile.common*.
+Additionaly, and as **SparkBWA** is built with Maven since version 0.2, also have it in the user computer is needed.
 
 ## Building
 The default way to build **SparkBWA** is:
 
 	git clone https://github.com/citiususc/SparkBWA.git
 	cd SparkBWA
-	make
-		
-This will create the *build* folder, which will contain two main files:
+	mvn package
 
-* **SparkBWA.jar** - jar file to launch with Spark.
+This will create the *target* folder, which will contain the *jar* file needed to run **SparkBWA**:
+
+* **sparkbwa-0.2.jar** - jar file to launch with Spark.
 
 ## Configuring Spark
 Spark only need to be stored in the Hadoop cluster master node. It can be downloaded as a binary or can be built from source. Either way, some parameters need to be adjusted to run **SparkBWA**. Assuming that Spark is stored at *spark_dir*, we need to modify the following file:
@@ -78,9 +77,10 @@ and uploaded to HDFS:
 	
 Finally, we can execute **SparkBWA** on the cluster. Again, we assume that Spark is stored at *spark_dir*:
 
-	spark_dir/bin/spark-submit --class SparkBWA --master yarn-client --driver-memory 1500m --executor-memory 1500m --executor-cores 1 --verbose --num-executors 32 SparkBWA.jar -algorithm mem -reads paired -index /Data/HumanBase/hg38 -partitions 32 ERR000589_1.filt.fastq ERR000589_2.filt.fastq Output_ERR000589
+	spark_dir/bin/spark-submit --class com.github.sparkbwa.SparkBWA --master yarn-cluster --driver-memory 1500m --executor-memory 1500m --executor-cores 1 --verbose --num-executors 32 sparkbwa-0.2.jar -algorithm mem -reads paired -index /Data/HumanBase/hg38 -partitions 32 ERR000589_1.filt.fastq ERR000589_2.filt.fastq Output_ERR000589
 
 Options:
+
 * **-algorithm mem** - Sequence alignment algorithm (mem - *BWA-MEM*, aln - *BWA-backtrack*).
 * **-reads paired** - Use single or paired-end reads.
 * **-bwaArgs** - Can be used to pass arguments directly to BWA (ex. "-t 4" to
@@ -90,16 +90,13 @@ Options:
 
 If you want to check all the available options, execute the command:
 
-	spark_dir/bin/spark-submit --class SparkBWA SparkBWA.jar
+	spark_dir/bin/spark-submit --class com.github.sparkbwa.SparkBWA sparkbwa-0.2.jar
 
-After the execution, in order to move the output to the local filesystem use: 
+After the execution, in order to move the output to the local filesystem use:
 
 	hdfs dfs -copyToLocal Output_ERR000589/* ./
 	
-In case of not using a reducer, the output will be split into several pieces (files). If we want to put it together we can use one of our Python utils or use "samtools merge":
-
-	hdfs dfs -copyToLocal Output_ERR000589/* ./
-	python src/utils/FullSam.py ./ ./OutputFile.sam
+In case of not using a reducer, the output will be split into several pieces (files). If we want to put it together we can use "samtools merge".
 
 ## Accuracy
 SparkBWA should be as accurate as running BWA normally. Below are GCAT
@@ -122,7 +119,6 @@ alignment benchmarks which proves this.
 ##Frequently asked questions (FAQs)
 
 1. [I can not build the tool because *jni_md.h* or *jni.h* is missing.](#building1)
-2. [SparkBWA fails with message *java.lang.UnsatisfiedLinkError: no bwa in java.library.path*.](#librarypatherror)
 
 ####<a name="building1"></a>1. I can not build the tool because *jni_md.h* or *jni.h* is missing.
 You need to set correctly your *JAVA_HOME* environment variable or you can set it in Makefile.common.
