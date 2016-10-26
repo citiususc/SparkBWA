@@ -17,10 +17,23 @@
 
 package com.github.sparkbwa;
 
+
+/** Main class. Here starts the program
+ * @author Jose M. Abuin
+ */
+
 public class SparkBWA {
 
-  public static void main(String[] args) {
-    BwaInterpreter newBwa = new BwaInterpreter(args);
-    newBwa.runBwa();
-  }
+	/**
+	*
+	* @param args Argments from command line
+	*/
+	public static void main(String[] args) {
+
+		// Creation of BwaInterpreter
+		BwaInterpreter newBwa = new BwaInterpreter(args);
+
+		//Run of BwaInterpreter
+		newBwa.runBwa();
+	}
 }
