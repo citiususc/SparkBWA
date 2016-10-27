@@ -44,7 +44,7 @@ The default way to build **SparkBWA** is:
 
 This will create the *target* folder, which will contain the *jar* file needed to run **SparkBWA**:
 
-* **sparkbwa-0.2.jar** - jar file to launch with Spark.
+* **SparkBWA-0.2.jar** - jar file to launch with Spark.
 
 ## Configuring Spark
 Spark only need to be stored in the Hadoop cluster master node. It can be downloaded as a binary or can be built from source. Either way, some parameters need to be adjusted to run **SparkBWA**. Assuming that Spark is stored at *spark_dir*, we need to modify the following file:
@@ -77,7 +77,7 @@ and uploaded to HDFS:
 	
 Finally, we can execute **SparkBWA** on the cluster. Again, we assume that Spark is stored at *spark_dir*:
 
-	spark_dir/bin/spark-submit --class com.github.sparkbwa.SparkBWA --master yarn-cluster --driver-memory 1500m --executor-memory 1500m --executor-cores 1 --verbose --num-executors 32 sparkbwa-0.2.jar -algorithm mem -reads paired -index /Data/HumanBase/hg38 -partitions 32 ERR000589_1.filt.fastq ERR000589_2.filt.fastq Output_ERR000589
+	spark_dir/bin/spark-submit --class com.github.sparkbwa.SparkBWA --master yarn-cluster --driver-memory 1500m --executor-memory 1500m --executor-cores 1 --verbose --num-executors 32 SparkBWA-0.2.jar -algorithm mem -reads paired -index /Data/HumanBase/hg38 -partitions 32 ERR000589_1.filt.fastq ERR000589_2.filt.fastq Output_ERR000589
 
 Options:
 
@@ -90,7 +90,7 @@ Options:
 
 If you want to check all the available options, execute the command:
 
-	spark_dir/bin/spark-submit --class com.github.sparkbwa.SparkBWA sparkbwa-0.2.jar
+	spark_dir/bin/spark-submit --class com.github.sparkbwa.SparkBWA SparkBWA-0.2.jar
 
 After the execution, in order to move the output to the local filesystem use:
 
