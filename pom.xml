@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.github.sparkbwa</groupId>
-    <artifactId>sparkbwa</artifactId>
+    <artifactId>SparkBWA</artifactId>
     <version>0.2</version>
 
     <repositories>
@@ -35,7 +35,6 @@
     </properties>
 
     <build>
-
         <plugins>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
@@ -49,7 +48,6 @@
                             <goal>exec</goal>
                         </goals>
                         <configuration>
-
                             <executable>make</executable>
                             <arguments>
                                 <argument>-C</argument>

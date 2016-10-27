@@ -20,9 +20,11 @@ sparkbwa:
 
 libbwa.so: sparkbwa bwa
 	$(CC) $(LIBBWA_FLAGS) $(BUILD_DIR)/libbwa.so $(BUILD_DIR)/*.o $(LIBBWA_LIBS)
-	cp $(BUILD_DIR)/libbwa.so ../resources/
+	#cp $(BUILD_DIR)/libbwa.so ../resources/
+	cp $(BUILD_DIR)/libbwa.so ../../../target/classes/
 	#cd $(BUILD_DIR) && zip -r bwa ./* && cd ..
 
 clean:
 	$(RMR) $(BUILD_DIR)
+	#$(RM) ../resources/libbwa.so
 	$(MAKE) clean -C $(BWA_DIR)
