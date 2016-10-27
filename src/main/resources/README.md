@@ -1,0 +1,1 @@
+This folder is for store the resulting libbwa.so library.
