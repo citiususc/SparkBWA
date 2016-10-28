@@ -67,6 +67,13 @@ public abstract class BwaAlignmentBase implements Serializable {
 			this.tmpDir = this.tmpDir.replaceFirst("file:", "");
 		}
 
+		File tmpFileDir = new File(this.tmpDir);
+
+		if(!tmpFileDir.isDirectory() || !tmpFileDir.canWrite()) {
+			this.tmpDir = "/tmp/";
+		}
+
+
 		this.LOG.info("["+this.getClass().getName()+"] :: " + this.appId + " - " + this.appName);
 	}
 
