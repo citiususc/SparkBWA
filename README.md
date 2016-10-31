@@ -77,7 +77,12 @@ and uploaded to HDFS:
 	
 Finally, we can execute **SparkBWA** on the cluster. Again, we assume that Spark is stored at *spark_dir*:
 
-	spark_dir/bin/spark-submit --class com.github.sparkbwa.SparkBWA --master yarn-cluster --driver-memory 1500m --executor-memory 1500m --executor-cores 1 --verbose --num-executors 32 SparkBWA-0.2.jar -algorithm mem -reads paired -index /Data/HumanBase/hg38 -partitions 32 ERR000589_1.filt.fastq ERR000589_2.filt.fastq Output_ERR000589
+	spark_dir/bin/spark-submit --class com.github.sparkbwa.SparkBWA --master yarn-cluster
+	--driver-memory 1500m --executor-memory 10g --executor-cores 1 --verbose 
+	--num-executors 32 SparkBWA-0.2.jar 
+	-algorithm mem -reads paired -index /opt/Data/HumanBase/hg38 -partitions 32
+	-bwaArgs "-R @RG\tID:foo\tLB:bar\tPL:illumina\tPU:illumina\tSM:ERR000589"
+	ERR000589_1.filt.fastq ERR000589_2.filt.fastq Output_ERR000589
 
 Options:
 
