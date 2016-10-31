@@ -47,16 +47,10 @@ This will create the *target* folder, which will contain the *jar* file needed t
 * **SparkBWA-0.2.jar** - jar file to launch with Spark.
 
 ## Configuring Spark
-Spark only need to be stored in the Hadoop cluster master node. It can be downloaded as a binary or can be built from source. Either way, some parameters need to be adjusted to run **SparkBWA**. Assuming that Spark is stored at *spark_dir*, we need to modify the following file:
-* **spark_dir/conf/spark-defaults.conf**. If it does not exist, copy it from *spark-defaults.conf.template*, in the same directory.
-
-The next line must be included in the file:
-	spark.yarn.executor.memoryOverhead	8704
-	
-In this way, Spark executors are able to find the BWA library (first line). The second line sets the amount of off-heap memory (in megabytes) to be allocated per YARN container.
+Since version 0.2 there is no need of configuring any Spark parameter. The only requirement is that the YARN containers need to have at least 10GB of memory available (for the human genome case).
 
 ## Running SparkBWA ##
-**SparkBWA** requires a working Hadoop cluster. Users should take into account that at least 10 GB of memory per map/YARN container are required (each map loads into memory the bwa index - refrence genome). Also, note that **SparkBWA** uses disk space in the */tmp* directory.
+**SparkBWA** requires a working Hadoop cluster. Users should take into account that at least 10 GB of memory per map/YARN container are required (each map loads into memory the bwa index - refrence genome). Also, note that **SparkBWA** uses disk space in the */tmp* directory or in the configured Hadoop or Spark temporary folder.
 
 Here it is an example of how to execute **SparkBWA** using the BWA-MEM algorithm with paired-end reads. The example assumes that our index is stored in all the cluster nodes at */Data/HumanBase/* . The index can be obtained from BWA using "bwa index".
 
@@ -78,9 +72,9 @@ and uploaded to HDFS:
 Finally, we can execute **SparkBWA** on the cluster. Again, we assume that Spark is stored at *spark_dir*:
 
 	spark_dir/bin/spark-submit --class com.github.sparkbwa.SparkBWA --master yarn-cluster
-	--driver-memory 1500m --executor-memory 10g --executor-cores 1 --verbose 
-	--num-executors 32 SparkBWA-0.2.jar 
-	-a mem -r paired -i /opt/Data/HumanBase/hg38 -p 32
+	--driver-memory 1500m --executor-memory 10g --executor-cores 1 --verbose
+	--num-executors 32 SparkBWA-0.2.jar -a mem -r paired
+	-i /Data/HumanBase/hg38 -p 32 
 	-b "-R @RG\tID:foo\tLB:bar\tPL:illumina\tPU:illumina\tSM:ERR000589"
 	ERR000589_1.filt.fastq ERR000589_2.filt.fastq Output_ERR000589
 
