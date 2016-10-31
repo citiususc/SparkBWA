@@ -53,8 +53,19 @@ public class BwaPairedAlignment extends BwaAlignmentBase implements Function2<In
 
 		// STEP 1: Input fastq reads tmp file creation
 		LOG.info("["+this.getClass().getName()+"] :: Tmp dir: " + this.tmpDir);
-		String fastqFileName1 = this.tmpDir + this.appId + "-RDD" + arg0 + "_1";
-		String fastqFileName2 = this.tmpDir + this.appId + "-RDD" + arg0 + "_2";
+
+		String fastqFileName1;
+		String fastqFileName2;
+
+		if(this.tmpDir.lastIndexOf("/") == this.tmpDir.length()-1) {
+			fastqFileName1 = this.tmpDir + this.appId + "-RDD" + arg0 + "_1";
+			fastqFileName2 = this.tmpDir + this.appId + "-RDD" + arg0 + "_2";
+		}
+		else {
+			fastqFileName1 = this.tmpDir + "/" + this.appId + "-RDD" + arg0 + "_1";
+			fastqFileName2 = this.tmpDir + "/" + this.appId + "-RDD" + arg0 + "_2";
+		}
+
 
 		LOG.info("["+this.getClass().getName()+"] :: Writing file: " + fastqFileName1);
 		LOG.info("["+this.getClass().getName()+"] :: Writing file: " + fastqFileName2);

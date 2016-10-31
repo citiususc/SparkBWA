@@ -91,7 +91,13 @@ public abstract class BwaAlignmentBase implements Serializable {
 			bwaInterpreter.setInputFile2(fastqFileName2);
 		}
 
-		this.bwaInterpreter.setOutputFile(this.tmpDir + outputSamFileName);
+		if(this.tmpDir.lastIndexOf("/") == this.tmpDir.length()-1) {
+			this.bwaInterpreter.setOutputFile(this.tmpDir + outputSamFileName);
+		}
+		else{
+			this.bwaInterpreter.setOutputFile(this.tmpDir + "/" +outputSamFileName);
+		}
+
 
 		//We run BWA with the corresponding options set
 		this.bwaInterpreter.run(0);
