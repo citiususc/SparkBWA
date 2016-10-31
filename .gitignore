@@ -4,6 +4,6 @@ target
 *.sw*
 *.class
 .idea
-sparkbwa.iml
+SparkBWA.iml
 src/main/resources/libbwa.so
 dependency-reduced-pom.xml
