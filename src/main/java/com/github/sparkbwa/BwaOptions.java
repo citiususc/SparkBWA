@@ -45,15 +45,16 @@ public class BwaOptions {
 	private boolean sortFastqReadsHdfs 	= false;
 
 	private String correctUse =
-		"spark-submit --class com.github.sparkbwa.SparkBWA [Spark options] sparkbwa-0.2.jar [SparkBWA Options] Input.fastq [Input2.fastq] Output\n"
-		+ "\n\n"
-		+ "To set the Input.fastq - setInputPath(string)\n"
-		+ "To set the Input2.fastq - setInputPath2(string)\n"
-		+ "To set the Output - setOutputPath(string)\n"
-		+ "The available SparkBWA options are: \n\n";
+		"spark-submit --class com.github.sparkbwa.SparkBWA SparkBWA-0.2.jar";// [SparkBWA Options] Input.fastq [Input2.fastq] Output\n";
+
 
   // Header to show when the program is not launched correctly
-  private String header = "Performs genomic alignment using bwa in a Hadoop cluster\n\n";
+  private String header = "\t<FASTQ file 1> [FASTQ file 2] <SAM file output>\n\nSparkBWA performs genomic alignment using bwa in a Hadoop/YARN cluster\nAvailable SparkBWA options are:\n";
+		  //+ "\n\n----SPARK SHELL OPTIONS----\n\nTo set the Input.fastq - setInputPath(string)\n"
+		  //+ "To set the Input2.fastq - setInputPath2(string)\n"
+		  //+ "To set the Output - setOutputPath(string)\n"
+		  //+ "The available SparkBWA options are: \n\n";
+
   // Footer to show when the program is not launched correctly
   private String footer = "\nPlease report issues at josemanuel.abuin@usc.es";
   private String outputPath = "";
@@ -82,6 +83,7 @@ public class BwaOptions {
 
 		//To print the help
 		HelpFormatter formatter = new HelpFormatter();
+		//formatter.setWidth(500);
 		//formatter.printHelp( correctUse,header, options,footer , true);
 
 		//Parse the given arguments
@@ -214,37 +216,37 @@ public class BwaOptions {
 		Options options = new Options();
 
 		//Algorithm options
-		Option algorithm = new Option("algorithm", true, "Specify the algorithm to use during the alignment");
-		algorithm.setArgName("mem|aln|bwasw");
+		Option algorithm = new Option("a", "algorithm", true, "Specify the algorithm to use during the alignment");
+		algorithm.setArgName("mem | aln | bwasw");
 
 		options.addOption(algorithm);
 
 		//Paired or single reads
-		Option reads = new Option("reads", true, "Type of reads to use during alignment");
-		reads.setArgName("paired|single");
+		Option reads = new Option("r", "reads", true, "Type of reads to use during alignment");
+		reads.setArgName("paired | single");
 
 		options.addOption(reads);
 
 		// Options to BWA
-		Option bwaArgs = new Option("bwaArgs", true, "Arguments passed directly to BWA");
+		Option bwaArgs = new Option("b", "bwaArgs", true, "Arguments passed directly to BWA");
 		bwaArgs.setArgName("\"BWA arguments\"");
 		options.addOption(bwaArgs);
 
 		//Index
-		Option index = new Option("index", true, "Prefix for the index created by bwa to use - setIndexPath(string)");
+		Option index = new Option("i", "index", true, "Prefix for the index created by bwa to use - setIndexPath(string)");
 		index.setArgName("Index prefix");
 
 		options.addOption(index);
 
 		//Partition number
-		Option partitions = new Option("partitions", true,
+		Option partitions = new Option("p", "partitions", true,
 				"Number of partitions to divide input reads - setPartitionNumber(int)");
 		partitions.setArgName("Number of partitions");
 
 		options.addOption(partitions);
 
-		Option sorting = new Option("sorting", true, "Type of algorithm used to sort input FASTQ reads");
-		sorting.setArgName("hdfs|spark");
+		Option sorting = new Option("s", "sorting", true, "Type of algorithm used to sort input FASTQ reads");
+		sorting.setArgName("hdfs | spark");
 
 		options.addOption(sorting);
 
