@@ -80,17 +80,17 @@ Finally, we can execute **SparkBWA** on the cluster. Again, we assume that Spark
 	spark_dir/bin/spark-submit --class com.github.sparkbwa.SparkBWA --master yarn-cluster
 	--driver-memory 1500m --executor-memory 10g --executor-cores 1 --verbose 
 	--num-executors 32 SparkBWA-0.2.jar 
-	-algorithm mem -reads paired -index /opt/Data/HumanBase/hg38 -partitions 32
-	-bwaArgs "-R @RG\tID:foo\tLB:bar\tPL:illumina\tPU:illumina\tSM:ERR000589"
+	-a mem -r paired -i /opt/Data/HumanBase/hg38 -p 32
+	-b "-R @RG\tID:foo\tLB:bar\tPL:illumina\tPU:illumina\tSM:ERR000589"
 	ERR000589_1.filt.fastq ERR000589_2.filt.fastq Output_ERR000589
 
 Options:
 
-* **-algorithm mem** - Sequence alignment algorithm (mem - *BWA-MEM*, aln - *BWA-backtrack*).
-* **-reads paired** - Use single or paired-end reads.
-* **-bwaArgs** - Can be used to pass arguments directly to BWA (ex. "-t 4" to
+* **-a mem** - Sequence alignment algorithm (mem - *BWA-MEM*, aln - *BWA-backtrack*).
+* **-r paired** - Use single or paired-end reads.
+* **-b "args"** - Can be used to pass arguments directly to BWA (ex. "-t 4" to
   specify the amount of threads to use per instance of BWA).
-* **-index** - Index prefix is specified. The index must be available in all the cluster nodes at the same location.
+* **-i index** - Index prefix is specified. The index must be available in all the cluster nodes at the same location.
 * The last three arguments are the input and output HDFS files.
 
 If you want to check all the available options, execute the command:
