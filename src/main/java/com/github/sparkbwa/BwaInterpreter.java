@@ -177,7 +177,7 @@ public class BwaInterpreter {
 		// Sort in memory with partitioning
 		else if ((options.getPartitionNumber() != 0) && (options.isSortFastqReads())) {
 			singleReadsKeyVal = singleReadsKeyVal.repartition(options.getPartitionNumber());
-			readsRDD = singleReadsKeyVal.sortByKey().values().persist(StorageLevel.MEMORY_ONLY());
+			readsRDD = singleReadsKeyVal.sortByKey().values();//.persist(StorageLevel.MEMORY_ONLY());
 			LOG.info("["+this.getClass().getName()+"] :: Repartition with sort");
 		}
 
@@ -206,8 +206,8 @@ public class BwaInterpreter {
 
 			readsRDD = singleReadsKeyVal
 				.repartition(options.getPartitionNumber())
-				.values()
-				.persist(StorageLevel.MEMORY_ONLY());
+				.values();
+				//.persist(StorageLevel.MEMORY_ONLY());
 
 		}
 
@@ -215,7 +215,7 @@ public class BwaInterpreter {
 		LOG.info("["+this.getClass().getName()+"] :: End of sorting. Timing: " + endTime);
 		LOG.info("["+this.getClass().getName()+"] :: Total time: " + (endTime - startTime) / 1e9 / 60.0 + " minutes");
 
-		readsRDD.persist(StorageLevel.MEMORY_ONLY());
+		//readsRDD.persist(StorageLevel.MEMORY_ONLY());
 
 		return readsRDD;
 	}
@@ -248,7 +248,7 @@ public class BwaInterpreter {
 		// Sort in memory with partitioning
 		else if ((options.getPartitionNumber() != 0) && (options.isSortFastqReads())) {
 			pairedReadsRDD = pairedReadsRDD.repartition(options.getPartitionNumber());
-			readsRDD = pairedReadsRDD.sortByKey().values().persist(StorageLevel.MEMORY_ONLY());
+			readsRDD = pairedReadsRDD.sortByKey().values();//.persist(StorageLevel.MEMORY_ONLY());
 			LOG.info("["+this.getClass().getName()+"] :: Repartition with sort");
 		}
 
@@ -276,15 +276,15 @@ public class BwaInterpreter {
 
 			readsRDD = pairedReadsRDD
 				.repartition(options.getPartitionNumber())
-				.values()
-				.persist(StorageLevel.MEMORY_ONLY());
+				.values();
+				//.persist(StorageLevel.MEMORY_ONLY());
 		}
 
 		long endTime = System.nanoTime();
 
 		LOG.info("["+this.getClass().getName()+"] :: End of sorting. Timing: " + endTime);
 		LOG.info("["+this.getClass().getName()+"] :: Total time: " + (endTime - startTime) / 1e9 / 60.0 + " minutes");
-		readsRDD.persist(StorageLevel.MEMORY_ONLY());
+		//readsRDD.persist(StorageLevel.MEMORY_ONLY());
 
 		return readsRDD;
 	}
