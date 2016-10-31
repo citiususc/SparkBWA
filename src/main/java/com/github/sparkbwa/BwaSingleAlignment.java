@@ -51,7 +51,17 @@ public class BwaSingleAlignment extends BwaAlignmentBase implements Function2<In
 	public Iterator<String> call(Integer arg0, Iterator<String> arg1) throws Exception {
 
 		LOG.info("["+this.getClass().getName()+"] :: Tmp dir: " + this.tmpDir);
-		String fastqFileName1 = this.tmpDir + this.appId + "-RDD" + arg0 + "_1";
+
+		String fastqFileName1;
+
+		if(this.tmpDir.lastIndexOf("/") == this.tmpDir.length()-1) {
+			fastqFileName1 = this.tmpDir + this.appId + "-RDD" + arg0 + "_1";
+
+		}
+		else {
+			fastqFileName1 = this.tmpDir + "/" + this.appId + "-RDD" + arg0 + "_1";
+
+		}
 
 		LOG.info("["+this.getClass().getName()+"] :: Writing file: " + fastqFileName1);
 
