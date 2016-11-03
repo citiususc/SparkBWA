@@ -20,6 +20,8 @@ import org.apache.commons.cli.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import java.util.*;
+
 /**
  * Class to parse and set the Bwa options
  *
@@ -44,27 +46,126 @@ public class BwaOptions {
 	private boolean sortFastqReads 		= false;
 	private boolean sortFastqReadsHdfs 	= false;
 
+	private boolean useReducer			= false;
+
 	private String correctUse =
 		"spark-submit --class com.github.sparkbwa.SparkBWA SparkBWA-0.2.jar";// [SparkBWA Options] Input.fastq [Input2.fastq] Output\n";
 
 
-  // Header to show when the program is not launched correctly
-  private String header = "\t<FASTQ file 1> [FASTQ file 2] <SAM file output>\n\nSparkBWA performs genomic alignment using bwa in a Hadoop/YARN cluster\nAvailable SparkBWA options are:\n";
+	// Header to show when the program is not launched correctly
+	private String header = "\t<FASTQ file 1> [FASTQ file 2] <SAM file output>\n\nSparkBWA performs genomic alignment using bwa in a Hadoop/YARN cluster\nAvailable SparkBWA options are:\n";
 		  //+ "\n\n----SPARK SHELL OPTIONS----\n\nTo set the Input.fastq - setInputPath(string)\n"
 		  //+ "To set the Input2.fastq - setInputPath2(string)\n"
 		  //+ "To set the Output - setOutputPath(string)\n"
 		  //+ "The available SparkBWA options are: \n\n";
 
-  // Footer to show when the program is not launched correctly
-  private String footer = "\nPlease report issues at josemanuel.abuin@usc.es";
-  private String outputPath = "";
-  private int partitionNumber = 0;
+	private String headerAlt = "spark-submit --class com.github.sparkbwa.SparkBWA SparkBWA-0.2.jar\n" +
+			"       [-a | -b | -m]  [-f | -k] [-h] [-i <Index prefix>]   [-n <Number of\n" +
+			"       partitions>] [-p | -s] [-r]  [-w <\"BWA arguments\">]\n" +
+			"       <FASTQ file 1> [FASTQ file 2] <SAM file output>";
+
+	// Footer to show when the program is not launched correctly
+	private String footer = "\nPlease report issues at josemanuel.abuin@usc.es";
+	private String outputPath = "";
+	private int partitionNumber = 0;
+
+	// Available options
+	private Options options = null;
+
+
+	private void printHelp() {
+
+		HashMap<String,ArrayList<Option>> optionsTable = new HashMap<String, ArrayList<Option>>();
+
+		// Add groups in the HashMap
+		Iterator availableGroups = this.options.getOptions().iterator();
+		while(availableGroups.hasNext()){
+
+			Option newOption = ((Option) availableGroups.next());
+			//System.out.println("Adding option " + newOption.getLongOpt());
+			if(optionsTable.containsKey(this.options.getOptionGroup(newOption).toString())){
+				optionsTable.get(this.options.getOptionGroup(newOption).toString()).add(newOption);
+			}
+			else{
+				ArrayList<Option> newArrayOptions= new ArrayList<Option>();
+				newArrayOptions.add(newOption);
+				optionsTable.put(this.options.getOptionGroup(newOption).toString(), newArrayOptions);
+			}
+
+		}
+
+		Iterator it = optionsTable.entrySet().iterator();
+
+		System.out.println("SparkBWA performs genomic alignment using bwa in a Hadoop/YARN cluster");
+		System.out.println(" usage: "+this.headerAlt);
+
+		while (it.hasNext()) {
+			Map.Entry pair = (Map.Entry)it.next();
+
+			String groupName = (String) pair.getKey();
+			if(groupName.contains("algorithm")) {
+				System.out.println("BWA algorithm options: ");
+			}
+			else if (groupName.contains("sort")) {
+				System.out.println("Sorting options: ");
+			}
+			else if (groupName.contains("help")) {
+				System.out.println("Help options: ");
+			}
+			else if (groupName.contains("reads")) {
+				System.out.println("Input FASTQ reads options: ");
+			}
+			else if (groupName.contains("Number of partitions")) {
+				System.out.println("Spark options: ");
+			}
+			else if (groupName.contains("Prefix for the index")) {
+				System.out.println("Index options: ");
+			}
+			else if(groupName.contains("directly to BWA")) {
+				System.out.println("BWA arguments options: ");
+			}
+			else if(groupName.contains("The program is going to merge")){
+				System.out.println("Reducer options: ");
+			}
+			else{
+				System.out.println(groupName + "options: ");
+			}
+
+
+			String newOptionOutput;
+			ArrayList<Option> availableOptions = ((ArrayList<Option>) pair.getValue());
+			for(int i = 0 ; i < availableOptions.size(); i++) {
+				Option currentOption = availableOptions.get(i);
+
+				newOptionOutput = "  " + "-" + currentOption.getOpt()+ ", --" + currentOption.getLongOpt();
+
+				if(currentOption.hasArg()) {
+					newOptionOutput = newOptionOutput + " <" + currentOption.getArgName()+ ">";
+				}
+
+				while(newOptionOutput.length()<=50) {
+					newOptionOutput = newOptionOutput + " ";
+				}
+
+				//newOptionOutput = newOptionOutput + "\t\t\t\t" + currentOption.getDescription();
+				newOptionOutput = newOptionOutput + currentOption.getDescription();
+
+				System.out.println(newOptionOutput);
+			}
+
+			System.out.println("");
+
+		}
+
+		System.out.println(this.footer);
+
+	}
 
 	/**
 	 * Constructor to use with no options
 	 */
-  public BwaOptions() {
-  }
+	public BwaOptions() {
+	}
 
 	/**
 	 * Constructor to use from within SparkBWA from the Linux console
@@ -79,7 +180,7 @@ public class BwaOptions {
 		}
 
 		//Algorithm options
-		Options options = this.initOptions();
+		this.options = this.initOptions();
 
 		//To print the help
 		HelpFormatter formatter = new HelpFormatter();
@@ -91,85 +192,98 @@ public class BwaOptions {
 		CommandLine cmd;
 
 		try {
-			cmd = parser.parse(options, args);
+			cmd = parser.parse(this.options, args);
 
 			//We look for the algorithm
-			if (cmd.hasOption("algorithm")) {
-				if (cmd.getOptionValue("algorithm").equals("mem")) {
-					//Case of the mem algorithm
-					memAlgorithm = true;
-					alnAlgorithm = false;
-					bwaswAlgorithm = false;
-				}
-				else if (cmd.getOptionValue("algorithm").equals("aln")) {
-					// Case of aln algorithm
-					alnAlgorithm = true;
-					memAlgorithm = false;
-					bwaswAlgorithm = false;
-				}
-				else if (cmd.getOptionValue("algorithm").equals("bwasw")) {
-					// Case of bwasw algorithm
-					bwaswAlgorithm = true;
-					memAlgorithm = false;
-					alnAlgorithm = false;
-				}
-				else {
-					LOG.warn("["+this.getClass().getName()+"] :: The algorithm "
+			if (cmd.hasOption('m') || cmd.hasOption("mem")){
+				//Case of the mem algorithm
+				memAlgorithm = true;
+				alnAlgorithm = false;
+				bwaswAlgorithm = false;
+			}
+			else if(cmd.hasOption('a') || cmd.hasOption("aln")){
+				// Case of aln algorithm
+				alnAlgorithm = true;
+				memAlgorithm = false;
+				bwaswAlgorithm = false;
+			}
+			else if(cmd.hasOption('b') || cmd.hasOption("bwasw")){
+				// Case of bwasw algorithm
+				bwaswAlgorithm = true;
+				memAlgorithm = false;
+				alnAlgorithm = false;
+			}
+			else{
+				// Default case. Mem algorithm
+				LOG.warn("["+this.getClass().getName()+"] :: The algorithm "
 						+ cmd.getOptionValue("algorithm")
 						+ " could not be found\nSetting to default mem algorithm\n");
 
-					memAlgorithm = true;
-					alnAlgorithm = false;
-					bwaswAlgorithm = false;
-				}
+				memAlgorithm = true;
+				alnAlgorithm = false;
+				bwaswAlgorithm = false;
 			}
 
 			//We look for the index
-			if (cmd.hasOption("index")) {
+			if (cmd.hasOption("index") || cmd.hasOption('i')) {
 				indexPath = cmd.getOptionValue("index");
 			}
+			/* There is no need of this, as the index option is mandatory
 			else {
 				LOG.error("["+this.getClass().getName()+"] :: No index has been found. Aborting.");
 				formatter.printHelp(correctUse, header, options, footer, true);
 				System.exit(1);
-			}
+			}*/
 
 			//Partition number
-			if (cmd.hasOption("partitions")) {
+			if (cmd.hasOption("partitions") || cmd.hasOption('n')) {
 				partitionNumber = Integer.parseInt(cmd.getOptionValue("partitions"));
 			}
 
-			if (cmd.hasOption("bwaArgs")) {
-				bwaArgs = cmd.getOptionValue("bwaArgs");
+			// BWA arguments
+			if (cmd.hasOption("bwa") || cmd.hasOption('w')) {
+				bwaArgs = cmd.getOptionValue("bwa");
 			}
 
-			//We look if we want the paired or single algorithm
-			if (cmd.hasOption("reads")) {
-				if (cmd.getOptionValue("reads").equals("single")) {
-					pairedReads = false;
-					singleReads = true;
-				}
-				else if (cmd.getOptionValue("reads").equals("paired")) {
-					pairedReads = true;
-					singleReads = false;
-				}
-				else {
-					LOG.warn("["+this.getClass().getName()+"] :: Reads argument could not be found\nSetting it to default paired reads\n");
-					pairedReads = true;
-					singleReads = false;
-				}
+			// Paired or single reads
+			if (cmd.hasOption("paired") || cmd.hasOption('p')) {
+				pairedReads = true;
+				singleReads = false;
+			}
+			else if (cmd.hasOption("single") || cmd.hasOption('s')) {
+				pairedReads = false;
+				singleReads = true;
+			}
+			else {
+				LOG.warn("["+this.getClass().getName()+"] :: Reads argument could not be found\nSetting it to default paired reads\n");
+				pairedReads = true;
+				singleReads = false;
 			}
 
-			//Sorting input reads
-			if (cmd.hasOption("sorting")) {
-				if (cmd.getOptionValue("sorting").equals("hdfs")) {
-					this.sortFastqReadsHdfs = true;
-					this.sortFastqReads = false;
-				}
-				else if (cmd.getOptionValue("sorting").equals("spark")) {
-					this.sortFastqReadsHdfs = false;
-					this.sortFastqReads = true;
-				}
+			// Sorting
+			if (cmd.hasOption('f') || cmd.hasOption("hdfs")) {
+				this.sortFastqReadsHdfs = true;
+				this.sortFastqReads = false;
+			}
+			else if (cmd.hasOption('k') || cmd.hasOption("spark")) {
+				this.sortFastqReadsHdfs = false;
+				this.sortFastqReads = true;
+			}
+			else{
+				this.sortFastqReadsHdfs = false;
+				this.sortFastqReads = false;
+			}
+
+			// Use reducer
+			if (cmd.hasOption('r') || cmd.hasOption("reducer")) {
+				this.useReducer = true;
+			}
+
+			// Help
+			if (cmd.hasOption('h') || cmd.hasOption("help")) {
+				//formatter.printHelp(correctUse, header, options, footer, true);
+				this.printHelp();
+				System.exit(0);
 			}
 
 			//Input and output paths
@@ -182,7 +296,7 @@ public class BwaOptions {
 					LOG.error("["+this.getClass().getName()+"] Other args:: " + tmpString);
 				}
 
-				formatter.printHelp(correctUse, header, options, footer, true);
+				//formatter.printHelp(correctUse, header, options, footer, true);
 				System.exit(1);
 			}
 			else if (otherArguments.length == 2) {
@@ -197,7 +311,12 @@ public class BwaOptions {
 
 		} catch (UnrecognizedOptionException e) {
 			e.printStackTrace();
-			formatter.printHelp(correctUse, header, options, footer, true);
+			//formatter.printHelp(correctUse, header, options, footer, true);
+			this.printHelp();
+			System.exit(1);
+		} catch (MissingOptionException e) {
+			//formatter.printHelp(correctUse, header, options, footer, true);
+			this.printHelp();
 			System.exit(1);
 		} catch (ParseException e) {
 			//formatter.printHelp( correctUse,header, options,footer , true);
@@ -213,44 +332,102 @@ public class BwaOptions {
 	*/
 	public Options initOptions() {
 
-		Options options = new Options();
+		Options privateOptions = new Options();
 
 		//Algorithm options
-		Option algorithm = new Option("a", "algorithm", true, "Specify the algorithm to use during the alignment");
-		algorithm.setArgName("mem | aln | bwasw");
+		//Option algorithm = new Option("a", "algorithm", true, "Specify the algorithm to use during the alignment");
+		//algorithm.setArgName("mem | aln | bwasw");
 
-		options.addOption(algorithm);
+		//options.addOption(algorithm);
+
+		OptionGroup algorithm = new OptionGroup();
+
+		Option mem = new Option("m","mem", false,"The MEM algorithm will be used");
+		algorithm.addOption(mem);
+
+		Option aln = new Option("a","aln", false,"The ALN algorithm will be used");
+		algorithm.addOption(aln);
+
+		Option bwasw = new Option("b", "bwasw", false, "The bwasw algorithm will be used");
+		algorithm.addOption(bwasw);
+
+		privateOptions.addOptionGroup(algorithm);
 
 		//Paired or single reads
-		Option reads = new Option("r", "reads", true, "Type of reads to use during alignment");
-		reads.setArgName("paired | single");
+		//Option reads = new Option("r", "reads", true, "Type of reads to use during alignment");
+		//reads.setArgName("paired | single");
 
-		options.addOption(reads);
+		//options.addOption(reads);
+		OptionGroup reads = new OptionGroup();
+
+		Option paired = new Option("p", "paired", false, "Paired reads will be used as input FASTQ reads");
+		reads.addOption(paired);
+
+		Option single = new Option("s", "single", false, "Single reads will be used as input FASTQ reads");
+		reads.addOption(single);
+
+		privateOptions.addOptionGroup(reads);
 
 		// Options to BWA
-		Option bwaArgs = new Option("b", "bwaArgs", true, "Arguments passed directly to BWA");
+		OptionGroup bwaOptionsGroup = new OptionGroup();
+		Option bwaArgs = new Option("w", "bwa", true, "Arguments passed directly to BWA");
 		bwaArgs.setArgName("\"BWA arguments\"");
-		options.addOption(bwaArgs);
+
+		bwaOptionsGroup.addOption(bwaArgs);
+
+		privateOptions.addOptionGroup(bwaOptionsGroup);
 
 		//Index
+		OptionGroup indexGroup = new OptionGroup();
 		Option index = new Option("i", "index", true, "Prefix for the index created by bwa to use - setIndexPath(string)");
 		index.setArgName("Index prefix");
+		index.setRequired(true);
 
-		options.addOption(index);
+		indexGroup.addOption(index);
+
+		privateOptions.addOptionGroup(indexGroup);
 
 		//Partition number
-		Option partitions = new Option("p", "partitions", true,
-				"Number of partitions to divide input reads - setPartitionNumber(int)");
+		OptionGroup sparkGroup = new OptionGroup();
+		Option partitions = new Option("n", "partitions", true,
+				"Number of partitions to divide input - setPartitionNumber(int)");
 		partitions.setArgName("Number of partitions");
 
-		options.addOption(partitions);
+		sparkGroup.addOption(partitions);
 
-		Option sorting = new Option("s", "sorting", true, "Type of algorithm used to sort input FASTQ reads");
-		sorting.setArgName("hdfs | spark");
+		privateOptions.addOptionGroup(sparkGroup);
 
-		options.addOption(sorting);
 
-		return options;
+		OptionGroup reducerGroup = new OptionGroup();
+		Option reducer = new Option("r", "reducer", false, "The program is going to merge all the final results in a reducer phase");
+
+		reducerGroup.addOption(reducer);
+
+		privateOptions.addOptionGroup(reducerGroup);
+
+		//Sorting
+		//Option sorting = new Option("s", "sorting", true, "Type of algorithm used to sort input FASTQ reads");
+		//sorting.setArgName("hdfs | spark");
+		//options.addOption(sorting);
+		OptionGroup sorting = new OptionGroup();
+
+		Option hdfs = new Option("f", "hdfs", false, "The HDFS is used to perform the input FASTQ reads sort");
+		sorting.addOption(hdfs);
+
+		Option spark = new Option("k", "spark", false, "the Spark engine is used to perform the input FASTQ reads sort");
+		sorting.addOption(spark);
+
+		privateOptions.addOptionGroup(sorting);
+
+		// Help
+		OptionGroup helpGroup = new OptionGroup();
+		Option help = new Option("h", "help", false, "Shows this help");
+
+		helpGroup.addOption(help);
+
+		privateOptions.addOptionGroup(helpGroup);
+
+		return privateOptions;
 	}
 
 	/**
@@ -519,5 +696,21 @@ public class BwaOptions {
 	*/
 	public void setSortFastqReadsHdfs(boolean sortFastqReadsHdfs) {
 		this.sortFastqReadsHdfs = sortFastqReadsHdfs;
+	}
+
+	/**
+	 * Getter for the option of using a final reducer
+	 * @return A boolean value that indicates if the program is going to use a final reducer function or not
+	 */
+	public boolean getUseReducer(){
+		return this.useReducer;
+	}
+
+	/**
+	 * Setter for the option of using a final reducer
+	 * @param newValueReducer The new value for the use reducer variable
+	 */
+	public void setuseReducer( boolean newValueReducer){
+		this.useReducer = newValueReducer;
 	}
 }

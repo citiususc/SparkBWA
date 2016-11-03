@@ -47,16 +47,10 @@ This will create the *target* folder, which will contain the *jar* file needed t
 * **SparkBWA-0.2.jar** - jar file to launch with Spark.
 
 ## Configuring Spark
-Spark only need to be stored in the Hadoop cluster master node. It can be downloaded as a binary or can be built from source. Either way, some parameters need to be adjusted to run **SparkBWA**. Assuming that Spark is stored at *spark_dir*, we need to modify the following file:
-* **spark_dir/conf/spark-defaults.conf**. If it does not exist, copy it from *spark-defaults.conf.template*, in the same directory.
-
-The next line must be included in the file:
-	spark.yarn.executor.memoryOverhead	8704
-	
-In this way, Spark executors are able to find the BWA library (first line). The second line sets the amount of off-heap memory (in megabytes) to be allocated per YARN container.
+Since version 0.2 there is no need of configuring any Spark parameter. The only requirement is that the YARN containers need to have at least 10GB of memory available (for the human genome case).
 
 ## Running SparkBWA ##
-**SparkBWA** requires a working Hadoop cluster. Users should take into account that at least 10 GB of memory per map/YARN container are required (each map loads into memory the bwa index - refrence genome). Also, note that **SparkBWA** uses disk space in the */tmp* directory.
+**SparkBWA** requires a working Hadoop cluster. Users should take into account that at least 10 GB of memory per map/YARN container are required (each map loads into memory the bwa index - refrence genome). Also, note that **SparkBWA** uses disk space in the */tmp* directory or in the configured Hadoop or Spark temporary folder.
 
 Here it is an example of how to execute **SparkBWA** using the BWA-MEM algorithm with paired-end reads. The example assumes that our index is stored in all the cluster nodes at */Data/HumanBase/* . The index can be obtained from BWA using "bwa index".
 
@@ -78,30 +72,64 @@ and uploaded to HDFS:
 Finally, we can execute **SparkBWA** on the cluster. Again, we assume that Spark is stored at *spark_dir*:
 
 	spark_dir/bin/spark-submit --class com.github.sparkbwa.SparkBWA --master yarn-cluster
-	--driver-memory 1500m --executor-memory 10g --executor-cores 1 --verbose 
-	--num-executors 32 SparkBWA-0.2.jar 
-	-a mem -r paired -i /opt/Data/HumanBase/hg38 -p 32
-	-b "-R @RG\tID:foo\tLB:bar\tPL:illumina\tPU:illumina\tSM:ERR000589"
+	--driver-memory 1500m --executor-memory 10g --executor-cores 1 --verbose
+	--num-executors 32 SparkBWA-0.2.jar -m -r -p --index /Data/HumanBase/hg38 -p 32 
+	-w "-R @RG\tID:foo\tLB:bar\tPL:illumina\tPU:illumina\tSM:ERR000589"
 	ERR000589_1.filt.fastq ERR000589_2.filt.fastq Output_ERR000589
 
-Options:
+Options used:
 
-* **-a mem** - Sequence alignment algorithm (mem - *BWA-MEM*, aln - *BWA-backtrack*).
-* **-r paired** - Use single or paired-end reads.
-* **-b "args"** - Can be used to pass arguments directly to BWA (ex. "-t 4" to
+* **-m** - Sequence alignment algorithm.
+* **-p** - Use paired-end reads.
+* **-w "args"** - Can be used to pass arguments directly to BWA (ex. "-t 4" to
   specify the amount of threads to use per instance of BWA).
-* **-i index** - Index prefix is specified. The index must be available in all the cluster nodes at the same location.
+* **--index index_prefix** - Index prefix is specified. The index must be available in all the cluster nodes at the same location.
 * The last three arguments are the input and output HDFS files.
-
-If you want to check all the available options, execute the command:
-
-	spark_dir/bin/spark-submit --class com.github.sparkbwa.SparkBWA SparkBWA-0.2.jar
 
 After the execution, in order to move the output to the local filesystem use:
 
 	hdfs dfs -copyToLocal Output_ERR000589/* ./
 	
 In case of not using a reducer, the output will be split into several pieces (files). If we want to put it together we can use "samtools merge".
+
+If you want to check all the available options, execute the command:
+
+	spark_dir/bin/spark-submit --class com.github.sparkbwa.SparkBWA SparkBWA-0.2.jar -h
+
+The result is:
+
+    SparkBWA performs genomic alignment using bwa in a Hadoop/YARN cluster
+     usage: spark-submit --class com.github.sparkbwa.SparkBWA SparkBWA-0.2.jar
+           [-a | -b | -m]  [-f | -k] [-h] [-i <Index prefix>]   [-n <Number of
+           partitions>] [-p | -s] [-r]  [-w <"BWA arguments">]
+           <FASTQ file 1> [FASTQ file 2] <SAM file output>
+    Help options: 
+      -h, --help                                       Shows this help
+    
+    Input FASTQ reads options: 
+      -p, --paired                                     Paired reads will be used as input FASTQ reads
+      -s, --single                                     Single reads will be used as input FASTQ reads
+    
+    Sorting options: 
+      -f, --hdfs                                       The HDFS is used to perform the input FASTQ reads sort
+      -k, --spark                                      the Spark engine is used to perform the input FASTQ reads sort
+    
+    BWA algorithm options: 
+      -a, --aln                                        The ALN algorithm will be used
+      -b, --bwasw                                      The bwasw algorithm will be used
+      -m, --mem                                        The MEM algorithm will be used
+    
+    Index options: 
+      -i, --index <Index prefix>                       Prefix for the index created by bwa to use - setIndexPath(string)
+    
+    Spark options: 
+      -n, --partitions <Number of partitions>          Number of partitions to divide input - setPartitionNumber(int)
+    
+    Reducer options: 
+      -r, --reducer                                    The program is going to merge all the final results in a reducer phase
+    
+    BWA arguments options: 
+      -w, --bwa <"BWA arguments">                      Arguments passed directly to BWA
 
 ## Accuracy
 SparkBWA should be as accurate as running BWA normally. Below are GCAT
