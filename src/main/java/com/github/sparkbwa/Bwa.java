@@ -53,6 +53,9 @@ public class Bwa implements Serializable {
 	private String outputFile					= "";
 	private String outputHdfsDir				= "";
 
+	//Reducer
+	private boolean isUseReducer				= false;
+
 	/**
 	 * This constructor is used when the BWA options are already set
 	 * @param options The options to use
@@ -69,6 +72,8 @@ public class Bwa implements Serializable {
 
 		this.indexPath		= options.getIndexPath();
 		this.outputHdfsDir	= options.getOutputPath();
+
+		this.isUseReducer	= options.getUseReducer();
 	}
 
 	/**
