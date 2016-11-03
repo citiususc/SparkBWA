@@ -20,6 +20,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.ContentSummary;
+import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.spark.ContextCleaner;
@@ -31,7 +32,9 @@ import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.storage.StorageLevel;
 import scala.Tuple2;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.List;
 
 /**
@@ -335,7 +338,43 @@ public class BwaInterpreter {
 			returnedValues = MapSingleBwa(bwa, readsRDD);
 		}
 
-		// TODO: In the case of use a reducer the final output has to be stored in just one file
+		// In the case of use a reducer the final output has to be stored in just one file
+		if(this.options.getUseReducer()) {
+			try {
+				FileSystem fs = FileSystem.get(this.conf);
+
+				Path finalHdfsOutputFile = new Path(this.options.getOutputHdfsDir() + "/FullOutput.sam");
+				FSDataOutputStream outputFinalStream = fs.create(finalHdfsOutputFile, true);
+
+				// We iterate over the resulting files in HDFS and agregate them into only one file.
+				for (int i = 0; i < returnedValues.size(); i++) {
+					LOG.info("JMAbuin:: SparkBWA :: Returned file ::" + returnedValues.get(i));
+					BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(new Path(returnedValues.get(i)))));
+
+					String line;
+					line = br.readLine();
+
+					while (line != null) {
+						if (i == 0 || !line.startsWith("@")) {
+							//outputFinalStream.writeBytes(line+"\n");
+							outputFinalStream.write((line + "\n").getBytes());
+						}
+
+						line = br.readLine();
+					}
+					br.close();
+
+					fs.delete(new Path(returnedValues.get(i)), true);
+				}
+
+				outputFinalStream.close();
+				fs.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+				LOG.error(e.toString());
+			}
+		}
+		/* // Previous version doesn't makes sense. We do not have tmp files in HDFS
 		for (String outputFile : returnedValues) {
 			LOG.info("["+this.getClass().getName()+"] :: SparkBWA:: Returned file ::" + outputFile);
 
@@ -355,6 +394,7 @@ public class BwaInterpreter {
 				LOG.error(e.toString());
 			}
 		}
+		*/
 	}
 
 	/**
