@@ -32,6 +32,7 @@
 
     <properties>
         <my.native.path>./src/main/native/</my.native.path>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
     <build>
