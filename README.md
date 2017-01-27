@@ -73,7 +73,7 @@ Finally, we can execute **SparkBWA** on the cluster. Again, we assume that Spark
 
 	spark_dir/bin/spark-submit --class com.github.sparkbwa.SparkBWA --master yarn-cluster
 	--driver-memory 1500m --executor-memory 10g --executor-cores 1 --verbose
-	--num-executors 32 SparkBWA-0.2.jar -m -r -p --index /Data/HumanBase/hg38 -p 32 
+	--num-executors 32 SparkBWA-0.2.jar -m -r -p --index /Data/HumanBase/hg38 -n 32 
 	-w "-R @RG\tID:foo\tLB:bar\tPL:illumina\tPU:illumina\tSM:ERR000589"
 	ERR000589_1.filt.fastq ERR000589_2.filt.fastq Output_ERR000589
 
