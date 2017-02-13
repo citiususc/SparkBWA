@@ -308,6 +308,7 @@ public class BwaOptions {
 				inputPath2 = otherArguments[1];
 				outputPath = otherArguments[2];
 			}
+			outputHdfsDir=outputPath;
 
 		} catch (UnrecognizedOptionException e) {
 			e.printStackTrace();
