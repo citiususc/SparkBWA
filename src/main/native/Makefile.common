@@ -19,7 +19,7 @@ BUILD_DIR = build
 # JAVA variables #######
 ifndef JAVA_HOME
 JAVA_HOME = /usr/lib/jvm/java
-JAVA_HOME_INCLUDES = -I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/linux
+JAVA_HOME_INCLUDES = -I$(JAVA_HOME)/include
 else
 JAVA_HOME_INCLUDES = -I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/linux
 endif
@@ -30,4 +30,12 @@ endif
 BWA_DIR = ./bwa-0.7.15
 SPARKBWA_FLAGS = -c -g -Wall -Wno-unused-function -O2 -fPIC -DHAVE_PTHREAD -DUSE_MALLOC_WRAPPERS $(JAVA_HOME_INCLUDES)
 LIBBWA_FLAGS = -shared -o
-LIBBWA_LIBS = -lrt -lz
+LIBBWA_LIBS = -lz
+
+# Add OS specific flags
+ifeq ($(shell uname -s), Linux)
+  LIBBWA_LIBS += -lrt
+  JAVA_HOME_INCLUDES += -I$(JAVA_HOME)/include/linux
+else ifeq ($(shell uname -s), Darwin)
+  JAVA_HOME_INCLUDES += -I$(JAVA_HOME)/include/darwin
+endif
