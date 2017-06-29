@@ -149,11 +149,11 @@ alignment benchmarks which proves this.
 * [Pair-ended reads (250 bp)](http://www.bioplanet.com/gcat/reports/7786-hteifmsqpm/alignment/250bp-pe-small-indel/sparkbwa-bwasw/compare-68-80)
 
 
-##Frequently asked questions (FAQs)
+## Frequently asked questions (FAQs)
 
 1. [I can not build the tool because *jni_md.h* or *jni.h* is missing.](#building1)
 
-####<a name="building1"></a>1. I can not build the tool because *jni_md.h* or *jni.h* is missing.
+#### <a name="building1"></a>1. I can not build the tool because *jni_md.h* or *jni.h* is missing.
 You need to set correctly your *JAVA_HOME* environment variable or you can set it in Makefile.common.
 
 [1]: https://github.com/lh3/bwa
