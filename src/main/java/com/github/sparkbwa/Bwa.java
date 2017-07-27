@@ -55,6 +55,9 @@ public class Bwa implements Serializable {
 
 	//Reducer
 	private boolean isUseReducer				= false;
+	
+	// Tmp directory
+	private String tmpPath 						= "";
 
 	/**
 	 * This constructor is used when the BWA options are already set
@@ -74,6 +77,8 @@ public class Bwa implements Serializable {
 		this.outputHdfsDir	= options.getOutputPath();
 
 		this.isUseReducer	= options.getUseReducer();
+		
+		this.tmpPath 		= options.getTmpDirectory();
 	}
 
 	/**
@@ -256,6 +261,21 @@ public class Bwa implements Serializable {
 	public void setOutputHdfsDir(String outputHdfsDir) {
 		this.outputHdfsDir = outputHdfsDir;
 	}
+	
+	/**
+	 * Getter for the tmp path
+	 *
+	 * @return A String containing the tmp path
+	 */
+	public String getTmpDir() { return this.tmpPath; }
+
+
+	/**
+	 * Setter for the tmp path
+	 *
+	 * @param tmpPath A String that indicates the tmp dir
+	 */
+	public void setTmpDir(String tmpPath) { this.tmpPath = tmpPath; }
 
 	/**
 	 *
