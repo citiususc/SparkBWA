@@ -59,7 +59,10 @@ public abstract class BwaAlignmentBase implements Serializable {
 		this.bwaInterpreter = bwaInterpreter;
 
 		//We set the tmp dir
-		if ((this.tmpDir == null || this.tmpDir == "null") && bwaInterpreter.getTmpDir() != null) {
+		if ((this.tmpDir == null || this.tmpDir == "null")
+				&& this.bwaInterpreter.getTmpDir() != null
+				&& !this.bwaInterpreter.getTmpDir().isEmpty()) {
+
 			this.tmpDir = bwaInterpreter.getTmpDir();
 		}
 		
