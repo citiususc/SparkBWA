@@ -59,6 +59,10 @@ public abstract class BwaAlignmentBase implements Serializable {
 		this.bwaInterpreter = bwaInterpreter;
 
 		//We set the tmp dir
+		if ((this.tmpDir == null || this.tmpDir == "null") && bwaInterpreter.getTmpDir() != null) {
+			this.tmpDir = bwaInterpreter.getTmpDir();
+		}
+		
 		if (this.tmpDir == null || this.tmpDir == "null") {
 			this.tmpDir = context.hadoopConfiguration().get("hadoop.tmp.dir");
 		}

@@ -46,6 +46,8 @@ public class BwaOptions {
 	private boolean sortFastqReads 		= false;
 	private boolean sortFastqReadsHdfs 	= false;
 
+	private String tmpPath 				= "";
+	
 	private boolean useReducer			= false;
 
 	private String correctUse =
@@ -61,7 +63,7 @@ public class BwaOptions {
 
 	private String headerAlt = "spark-submit --class com.github.sparkbwa.SparkBWA SparkBWA-0.2.jar\n" +
 			"       [-a | -b | -m]  [-f | -k] [-h] [-i <Index prefix>]   [-n <Number of\n" +
-			"       partitions>] [-p | -s] [-r]  [-w <\"BWA arguments\">]\n" +
+			"       partitions>] [-p | -s] [-r]  [-w <\"BWA arguments\">] [-t <\"tmp path\">]\n" +
 			"       <FASTQ file 1> [FASTQ file 2] <SAM file output>";
 
 	// Footer to show when the program is not launched correctly
@@ -126,6 +128,9 @@ public class BwaOptions {
 			}
 			else if(groupName.contains("The program is going to merge")){
 				System.out.println("Reducer options: ");
+			}
+			else if(groupName.contains("The tmpDir is used for selecting")){
+				System.out.println("Tmp path options: ");
 			}
 			else{
 				System.out.println(groupName + "options: ");
@@ -278,6 +283,11 @@ public class BwaOptions {
 			if (cmd.hasOption('r') || cmd.hasOption("reducer")) {
 				this.useReducer = true;
 			}
+			
+			// Specify alternate tmp dir
+			if (cmd.hasOption('t') || cmd.hasOption("tmpDir")) {
+			    this.tmpPath = cmd.getOptionValue("tmpDir");
+            		}
 
 			// Help
 			if (cmd.hasOption('h') || cmd.hasOption("help")) {
@@ -419,6 +429,13 @@ public class BwaOptions {
 		sorting.addOption(spark);
 
 		privateOptions.addOptionGroup(sorting);
+		
+		// Tmp Dir
+		OptionGroup tmpPath = new OptionGroup();
+		Option tmpDir = new Option("t", "tmpDir", true, "The tmpDir is used for selecting the temp dir used for temporal storage");
+		tmpDir.setArgName("Temporary Directory");
+		tmpPath.addOption(tmpDir);
+		privateOptions.addOptionGroup(tmpPath);
 
 		// Help
 		OptionGroup helpGroup = new OptionGroup();
@@ -714,4 +731,16 @@ public class BwaOptions {
 	public void setuseReducer( boolean newValueReducer){
 		this.useReducer = newValueReducer;
 	}
+	
+	/**
+	 * Getter for the option of using an alternate tmp dir
+	 * @return A string containing the alternative tmp dir if present
+	 */
+	public String getTmpDirectory() { return this.tmpPath; }
+
+	/**
+	 * Setter for the option of using an alternative tmp dir
+	 * @param tmpDir The new value for the tmp dir
+	 */
+	public void setTmpDirectory(String tmpDir) { this.tmpPath = tmpDir; }
 }
