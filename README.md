@@ -23,7 +23,7 @@ Since version 0.2 the project keeps a standard Maven structure. The source code 
 # Getting started #
 
 ## Requirements
-Requirements to build **SparkBWA** are the same than the ones to build BWA, with the only exception that the *JAVA_HOME* environment variable should be defined. If not, you can define it in the */src/main/native/Makefile.common* file. 
+Requirements to build **SparkBWA** are the same than the ones to build BWA, with the only exception that the *JAVA_HOME* environment variable should be defined. If not, you can define it in the */src/main/native/Makefile.common* file.
 
 It is also needed to include the flag *-fPIC* in the *Makefile* of the considered BWA version. To do this, the user just need to add this option to the end of the *CFLAGS* variable in the BWA Makefile. Considering bwa-0.7.15, the original Makefile contains:
 
@@ -58,22 +58,22 @@ First, we get the input FASTQ reads from the [1000 Genomes Project][3] ftp:
 
 	wget ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/phase3/data/NA12750/sequence_read/ERR000589_1.filt.fastq.gz
 	wget ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/phase3/data/NA12750/sequence_read/ERR000589_2.filt.fastq.gz
-	
+
 Next, the downloaded files should be uncompressed:
 
 	gzip -d ERR000589_1.filt.fastq.gz
 	gzip -d ERR000589_2.filt.fastq.gz
-	
+
 and uploaded to HDFS:
 
 	hdfs dfs -copyFromLocal ERR000589_1.filt.fastq ERR000589_1.filt.fastq
 	hdfs dfs -copyFromLocal ERR000589_2.filt.fastq ERR000589_2.filt.fastq
-	
+
 Finally, we can execute **SparkBWA** on the cluster. Again, we assume that Spark is stored at *spark_dir*:
 
-	spark_dir/bin/spark-submit --class com.github.sparkbwa.SparkBWA --master yarn-cluster
+	spark_dir/bin/spark-submit --class com.github.sparkbwa.SparkBWA --master yarn --deploy-mode cluster
 	--driver-memory 1500m --executor-memory 10g --executor-cores 1 --verbose
-	--num-executors 32 SparkBWA-0.2.jar -m -r -p --index /Data/HumanBase/hg38 -n 32 
+	--num-executors 32 SparkBWA-0.2.jar -m -r -p --index /Data/HumanBase/hg38 -n 32
 	-w "-R @RG\tID:foo\tLB:bar\tPL:illumina\tPU:illumina\tSM:ERR000589"
 	ERR000589_1.filt.fastq ERR000589_2.filt.fastq Output_ERR000589
 
@@ -89,7 +89,7 @@ Options used:
 After the execution, in order to move the output to the local filesystem use:
 
 	hdfs dfs -copyToLocal Output_ERR000589/* ./
-	
+
 In case of not using a reducer, the output will be split into several pieces (files). If we want to put it together we can use "samtools merge".
 
 If you want to check all the available options, execute the command:
@@ -103,32 +103,32 @@ The result is:
            [-a | -b | -m]  [-f | -k] [-h] [-i <Index prefix>]   [-n <Number of
            partitions>] [-p | -s] [-r]  [-w <"BWA arguments">]
            <FASTQ file 1> [FASTQ file 2] <SAM file output>
-    Help options: 
+    Help options:
       -h, --help                                       Shows this help
-    
-    Input FASTQ reads options: 
+
+    Input FASTQ reads options:
       -p, --paired                                     Paired reads will be used as input FASTQ reads
       -s, --single                                     Single reads will be used as input FASTQ reads
-    
-    Sorting options: 
+
+    Sorting options:
       -f, --hdfs                                       The HDFS is used to perform the input FASTQ reads sort
       -k, --spark                                      the Spark engine is used to perform the input FASTQ reads sort
-    
-    BWA algorithm options: 
+
+    BWA algorithm options:
       -a, --aln                                        The ALN algorithm will be used
       -b, --bwasw                                      The bwasw algorithm will be used
       -m, --mem                                        The MEM algorithm will be used
-    
-    Index options: 
+
+    Index options:
       -i, --index <Index prefix>                       Prefix for the index created by bwa to use - setIndexPath(string)
-    
-    Spark options: 
+
+    Spark options:
       -n, --partitions <Number of partitions>          Number of partitions to divide input - setPartitionNumber(int)
-    
-    Reducer options: 
+
+    Reducer options:
       -r, --reducer                                    The program is going to merge all the final results in a reducer phase
-    
-    BWA arguments options: 
+
+    BWA arguments options:
       -w, --bwa <"BWA arguments">                      Arguments passed directly to BWA
 
 ## Accuracy
